@@ -2,7 +2,7 @@ import os
 import json
 from datetime import datetime, timedelta
 from typing import Optional, List, Dict
-
+from fastapi.responses import FileResponse
 from fastapi import FastAPI, Depends, HTTPException, Header, WebSocket, WebSocketDisconnect
 from fastapi.security import HTTPBearer
 from fastapi.middleware.cors import CORSMiddleware
@@ -253,6 +253,10 @@ class PaymentIn(BaseModel):
 # ---------------------------------------------------------------------------
 # Auth & Users
 # ---------------------------------------------------------------------------
+@app.get("/",response_class=FileResponse)
+def read_index():
+    #Serve a página web do frontend (index.html)."""
+    return FileResponse("index.html")
 @app.get("/health")
 def health():
     return {"status": "ok", "app": "AgroLink Angola", "commission_rate": COMMISSION_RATE}
