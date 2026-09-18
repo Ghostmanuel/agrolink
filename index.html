@@ -253,6 +253,639 @@
    Ligação a uma API própria (FastAPI). Configure o endereço em Definições.
 --------------------------------------------------------------------- */
 const state = {
+  // Por defeito assume que a API está no MESMO domínio onde a app foi aberta
+  // (é o caso quando o backend serve também o index.html, no Render).
+  // Nas Definições (⚙️) pode sempre apontar para outro endereço, se precisar.
+  apiBase: localStorage.getItem('agrolink_api') || window.location.origin,
+  token: localStorage.getItem('agrolink_token') || '',
+  user: JSON.parse(localStorage.getItem('agrolink_user') || 'null'),
+  currentOrder: null,
+  currentConversation: null,
+  locationSocket: null,
+  chatSocket: null,
+  map: null,
+  marker: null,
+  sharing: false,
+  watchId: null,
+};
+
+const $ = (id) => document.getElementById(id);
+const wsBase = () => state.apiBase.replace(/^http/, 'ws');
+
+function authHeaders(extra={}) {
+  return Object.assign({'Content-Type':'application/json'}, state.token ? {Authorization: 'Bearer '+state.token} : {}, extra);
+}
+async function api(path, opts={}) {
+  const res = await fetch(state.apiBase + path, Object.assign({}, opts, {
+    headers: authHeaders(opts.headers || {})
+  }));
+  let data = {};
+  try { data = await res.json(); } catch(e) {}
+  if (!res.ok) throw new Error(data.detail || 'Erro de ligação ao servidor.');
+  return data;
+}
+
+function showScreen(name) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  $('screen-' + name).classList.add('active');
+  document.querySelectorAll('nav.tabbar button').forEach(b => b.classList.toggle('active', b.dataset.screen === name));
+}
+
+function renderAuthState() {
+  if (state.user) {
+    $('tabbar').style.display = 'flex';
+    $('roleTag').textContent = {buyer:'Comprador', farmer:'Agricultor', driver:'Transportador', admin:'Administrador'}[state.user.role] || '';
+    showScreen('market');
+    loadProducts();
+    renderProfile();
+  } else {
+    $('tabbar').style.display = 'none';
+    showScreen('auth');
+  }
+}
+
+/* ---------------- AUTH ---------------- */
+$('authSeg').addEventListener('click', (e) => {
+  const btn = e.target.closest('button'); if (!btn) return;
+  document.querySelectorAll('#authSeg button').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  const isLogin = btn.dataset.mode === 'login';
+  $('loginForm').style.display = isLogin ? 'block' : 'none';
+  $('registerForm').style.display = isLogin ? 'none' : 'block';
+});
+
+$('loginForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  $('authError').innerHTML = '';
+  try {
+    const data = await api('/api/v1/auth/login', {method:'POST', body: JSON.stringify({
+      phone: $('loginPhone').value, password: $('loginPass').value
+    })});
+    finishAuth(data);
+  } catch (err) { $('authError').innerHTML = `<div class="error">${err.message}</div>`; }
+});
+
+$('registerForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  $('authError').innerHTML = '';
+  try {
+    const data = await api('/api/v1/auth/register', {method:'POST', body: JSON.stringify({
+      name: $('regName').value, phone: $('regPhone').value, password: $('regPass').value,
+      role: $('regRole').value, province: $('regProvince').value,
+      express_phone: $('regExpress').value || null, iban: $('regIban').value || null,
+    })});
+    finishAuth(data);
+  } catch (err) { $('authError').innerHTML = `<div class="error">${err.message}</div>`; }
+});
+
+function finishAuth(data) {
+  state.token = data.access_token; state.user = data.user;
+  localStorage.setItem('agrolink_token', state.token);
+  localStorage.setItem('agrolink_user', JSON.stringify(state.user));
+  renderAuthState();
+}
+
+$('logoutBtn').addEventListener('click', () => {
+  state.token=''; state.user=null;
+  localStorage.removeItem('agrolink_token'); localStorage.removeItem('agrolink_user');
+  renderAuthState();
+});
+
+$('settingsBtn').addEventListener('click', () => {
+  const v = prompt('Endereço da API (backend):', state.apiBase);
+  if (v) { state.apiBase = v.replace(/\/$/,''); localStorage.setItem('agrolink_api', state.apiBase); }
+});
+
+/* ---------------- TABS ---------------- */
+$('tabbar').addEventListener('click', (e) => {
+  const btn = e.target.closest('button'); if (!btn) return;
+  showScreen(btn.dataset.screen);
+  if (btn.dataset.screen === 'orders') loadOrders();
+  if (btn.dataset.screen === 'profile') renderProfile();
+});
+
+/* ---------------- MARKETPLACE ---------------- */
+let searchTimer;
+$('searchInput').addEventListener('input', () => { clearTimeout(searchTimer); searchTimer = setTimeout(loadProducts, 300); });
+
+async function loadProducts() {
+  try {
+    const q = $('searchInput').value;
+    const rows = await api('/api/v1/products' + (q ? '?q=' + encodeURIComponent(q) : ''));
+    const list = $('productList');
+    if (!rows.length) { list.innerHTML = '<div class="empty">Sem produtos disponíveis agora.</div>'; return; }
+    list.innerHTML = rows.map(p => `
+      <div class="card">
+        <span class="tag">${p.category}</span><span class="tag">${p.province}</span>
+        <h3>${p.name}</h3>
+        <p class="meta">${p.description || 'Sem descrição.'}</p>
+        <div class="price-row">
+          <div><div class="price">Kz ${p.price.toLocaleString('pt-PT')}/${p.unit}</div>
+          <div class="meta">Disponível: ${p.quantity} ${p.unit}</div></div>
+          ${state.user && state.user.role === 'buyer' ? `<button class="btn" style="width:auto;padding:9px 16px" onclick="openBuy(${p.id})">Comprar</button>` : ''}
+        </div>
+      </div>`).join('');
+  } catch(err) { $('productList').innerHTML = `<div class="error">${err.message}</div>`; }
+}
+
+window.openBuy = async function(productId) {
+  const qty = prompt('Quantidade a comprar?', '1');
+  if (!qty || isNaN(qty) || Number(qty) <= 0) return;
+  try {
+    const order = await api('/api/v1/orders', {method:'POST', body: JSON.stringify({product_id: productId, quantity: Number(qty)})});
+    openPaymentModal(order);
+  } catch(err) { alert(err.message); }
+};
+
+/* ---------------- PAGAMENTOS ---------------- */
+function openPaymentModal(order) {
+  const back = document.createElement('div'); back.className = 'modal-back';
+  back.innerHTML = `
+    <div class="modal">
+      <div class="modal-handle"></div>
+      <h2 class="section">PAGAMENTO DO PEDIDO #${order.id}</h2>
+      <div class="banner"><div class="big">Kz ${order.total.toLocaleString('pt-PT')}</div><div class="small">Total a pagar</div></div>
+      <div class="segmented" id="paySeg">
+        <button class="active" data-m="multicaixa_express">Multicaixa Express</button>
+        <button data-m="iban">Transferência IBAN</button>
+      </div>
+      <div class="field" id="payRefField"><label id="payRefLabel">Nº de telefone Multicaixa Express</label><input id="payRefInput" placeholder="9XX XXX XXX"></div>
+      <div id="payMsg"></div>
+      <button class="btn" id="payConfirmBtn">Confirmar pagamento</button>
+      <p class="commission-note">Uma comissão moderada da AgroLink (atualmente ~4%) é retida para manter a plataforma; o restante é enviado ao vendedor após confirmação.</p>
+      <button class="btn ghost" id="payCloseBtn">Fechar</button>
+    </div>`;
+  document.body.appendChild(back);
+  let method = 'multicaixa_express';
+  back.querySelector('#paySeg').addEventListener('click', (e) => {
+    const b = e.target.closest('button'); if (!b) return;
+    back.querySelectorAll('#paySeg button').forEach(x=>x.classList.remove('active')); b.classList.add('active');
+    method = b.dataset.m;
+    back.querySelector('#payRefLabel').textContent = method === 'iban' ? 'IBAN do beneficiário' : 'Nº de telefone Multicaixa Express';
+    back.querySelector('#payRefInput').placeholder = method === 'iban' ? 'AO06 0000 ...' : '9XX XXX XXX';
+  });
+  back.querySelector('#payCloseBtn').addEventListener('click', () => back.remove());
+  back.querySelector('#payConfirmBtn').addEventListener('click', async () => {
+    const ref = back.querySelector('#payRefInput').value.trim();
+    if (!ref) { back.querySelector('#payMsg').innerHTML = '<div class="error">Indique a referência de pagamento.</div>'; return; }
+    try {
+      const p = await api('/api/v1/payments', {method:'POST', body: JSON.stringify({order_id: order.id, method, reference: ref})});
+      back.querySelector('#payMsg').innerHTML = `<div class="success">${p.instructions}</div>`;
+      setTimeout(() => { back.remove(); showScreen('orders'); loadOrders(); }, 1600);
+    } catch(err) { back.querySelector('#payMsg').innerHTML = `<div class="error">${err.message}</div>`; }
+  });
+}
+
+/* ---------------- PEDIDOS ---------------- */
+async function loadOrders() {
+  try {
+    const rows = await api('/api/v1/orders');
+    const list = $('ordersList');
+    if (!rows.length) { list.innerHTML = '<div class="empty">Ainda sem pedidos.</div>'; return; }
+    list.innerHTML = rows.map(o => `
+      <div class="card" onclick="openTracking(${o.id})" style="cursor:pointer">
+        <div class="price-row">
+          <h3>Pedido #${o.id}</h3>
+          <span class="status ${o.status}">${o.status.replace('_',' ')}</span>
+        </div>
+        <p class="meta">Quantidade: ${o.quantity} · Total: Kz ${o.total.toLocaleString('pt-PT')}</p>
+        <p class="meta">${new Date(o.created_at).toLocaleString('pt-PT')}</p>
+      </div>`).join('');
+  } catch(err) { $('ordersList').innerHTML = `<div class="error">${err.message}</div>`; }
+}
+
+window.openTracking = function(orderId) {
+  state.currentOrder = orderId;
+  showScreen('tracking');
+  $('trackingStatus').innerHTML = `<div class="big">Pedido #${orderId}</div><div class="small">A acompanhar em tempo real</div>`;
+  $('trackingMeta').innerHTML = 'A carregar localização...';
+  initMap();
+  connectLocationSocket(orderId);
+  loadLastLocation(orderId);
+};
+
+$('backFromTracking').addEventListener('click', () => {
+  if (state.locationSocket) { state.locationSocket.close(); state.locationSocket = null; }
+  showScreen('orders'); loadOrders();
+});
+
+function initMap() {
+  const el = $('map'); el.innerHTML='';
+  state.map = L.map(el).setView([-8.8368, 13.2343], 6); // Luanda por defeito
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '&copy; OpenStreetMap'
+  }).addTo(state.map);
+  state.marker = L.marker([-8.8368, 13.2343]).addTo(state.map).bindPopup('Veículo');
+}
+
+async function loadLastLocation(orderId) {
+  try {
+    const loc = await api(`/api/v1/orders/${orderId}/location`);
+    updateMapPosition(loc.latitude, loc.longitude, loc.speed_kmh, loc.timestamp);
+  } catch (err) {
+    $('trackingMeta').innerHTML = '<p class="meta">Ainda sem sinal do transportador. A aguardar início da viagem…</p>';
+  }
+}
+
+function updateMapPosition(lat, lng, speed, ts) {
+  if (!state.map) return;
+  state.marker.setLatLng([lat, lng]);
+  state.map.setView([lat, lng], 13);
+  $('trackingMeta').innerHTML = `
+    <p class="meta">📍 ${lat.toFixed(5)}, ${lng.toFixed(5)}</p>
+    <p class="meta">🚚 Velocidade: ${speed != null ? speed.toFixed(0) + ' km/h' : '—'}</p>
+    <p class="meta">🕒 Atualizado: ${new Date(ts).toLocaleTimeString('pt-PT')}</p>`;
+}
+
+function connectLocationSocket(orderId) {
+  if (state.locationSocket) state.locationSocket.close();
+  const ws = new WebSocket(`${wsBase()}/ws/location/${orderId}?token=${state.token}`);
+  ws.onmessage = (evt) => { const d = JSON.parse(evt.data); updateMapPosition(d.latitude, d.longitude, d.speed_kmh, d.timestamp); };
+  state.locationSocket = ws;
+}
+
+$('openChatFromTracking').addEventListener('click', async () => {
+  try {
+    // simplificação: para o comprador, abre conversa com o vendedor do produto do pedido
+    // (num cenário real, o backend devolveria o seller_id do pedido)
+    const sellerId = prompt('ID do vendedor para conversar:');
+    if (!sellerId) return;
+    const conv = await api('/api/v1/conversations', {method:'POST', body: JSON.stringify({seller_id: Number(sellerId)})});
+    openChat(conv.id);
+  } catch(err) { alert(err.message); }
+});
+
+/* ---------------- CHAT ---------------- */
+window.openChat = async function(convId) {
+  state.currentConversation = convId;
+  showScreen('chat');
+  await loadChatHistory(convId);
+  connectChatSocket(convId);
+};
+
+async function loadChatHistory(convId) {
+  try {
+    const rows = await api(`/api/v1/conversations/${convId}/messages`);
+    renderChat(rows);
+  } catch(err) { $('chatList').innerHTML = `<div class="error">${err.message}</div>`; }
+}
+
+function renderChat(rows) {
+  $('chatList').innerHTML = rows.map(m => `
+    <div class="bubble ${m.sender_id === state.user.id ? 'me' : 'them'}">
+      ${m.content}
+      ${m.proposed_price != null ? `<div class="price-pill">Proposta: Kz ${m.proposed_price.toLocaleString('pt-PT')}</div>` : ''}
+    </div>`).join('');
+  $('chatList').scrollTop = $('chatList').scrollHeight;
+}
+
+function connectChatSocket(convId) {
+  if (state.chatSocket) state.chatSocket.close();
+  const ws = new WebSocket(`${wsBase()}/ws/chat/${convId}?token=${state.token}`);
+  ws.onmessage = (evt) => {
+    const m = JSON.parse(evt.data);
+    const div = document.createElement('div');
+    div.className = `bubble ${m.sender_id === state.user.id ? 'me' : 'them'}`;
+    div.innerHTML = `${m.content}${m.proposed_price != null ? `<div class="price-pill">Proposta: Kz ${m.proposed_price.toLocaleString('pt-PT')}</div>` : ''}`;
+    $('chatList').appendChild(div); $('chatList').scrollTop = $('chatList').scrollHeight;
+  };
+  state.chatSocket = ws;
+}
+
+$('backFromChat').addEventListener('click', () => {
+  if (state.chatSocket) { state.chatSocket.close(); state.chatSocket = null; }
+  showScreen('market');
+});
+
+$('sendChatBtn').addEventListener('click', sendChatMessage);
+$('chatMsgInput').addEventListener('keydown', (e) => { if (e.key === 'Enter') sendChatMessage(); });
+
+function sendChatMessage() {
+  const content = $('chatMsgInput').value.trim();
+  const price = $('chatPriceInput').value;
+  if (!content && !price) return;
+  if (!state.chatSocket || state.chatSocket.readyState !== 1) { alert('Ligação de chat indisponível.'); return; }
+  state.chatSocket.send(JSON.stringify({content: content || `Proposta: Kz ${price}`, proposed_price: price ? Number(price) : null}));
+  $('chatMsgInput').value=''; $('chatPriceInput').value='';
+}
+
+/* ---------------- PERFIL ---------------- */
+function renderProfile() {
+  if (!state.user) return;
+  $('profileCard').innerHTML = `
+    <h3>${state.user.name}</h3>
+    <p class="meta">Perfil: ${state.user.role}</p>`;
+  $('farmerPanel').style.display = state.user.role === 'farmer' ? 'block' : 'none';
+  $('driverPanel').style.display = state.user.role === 'driver' ? 'block' : 'none';
+  $('adminPanel').style.display = state.user.role === 'admin' ? 'block' : 'none';
+  if (state.user.role === 'driver') loadDriverOrders();
+  if (state.user.role === 'admin') loadAdminSummary();
+}
+
+$('publishBtn').addEventListener('click', async () => {
+  try {
+    await api('/api/v1/products', {method:'POST', body: JSON.stringify({
+      name: $('pName').value, category: $('pCategory').value, price: Number($('pPrice').value),
+      quantity: Number($('pQty').value), unit: $('pUnit').value, province: $('pProvince').value,
+      description: $('pDesc').value,
+    })});
+    alert('Produto publicado!');
+    ['pName','pPrice','pQty','pProvince','pDesc'].forEach(id => $(id).value='');
+  } catch(err) { alert(err.message); }
+});
+
+$('saveVehicleBtn').addEventListener('click', async () => {
+  try {
+    await api('/api/v1/vehicles', {method:'POST', body: JSON.stringify({
+      plate: $('vPlate').value, model: $('vModel').value, vehicle_type: $('vType').value,
+      capacity_kg: Number($('vCap').value || 0),
+    })});
+    alert('Veículo guardado!');
+  } catch(err) { alert(err.message); }
+});
+
+async function loadDriverOrders() {
+  try {
+    const rows = await api('/api/v1/orders');
+    $('driverOrderSelect').innerHTML = rows.map(o => `<option value="${o.id}">Pedido #${o.id}</option>`).join('') || '<option value="">Sem pedidos atribuídos</option>';
+  } catch(err) {}
+}
+
+$('startSharingBtn').addEventListener('click', () => {
+  const orderId = $('driverOrderSelect').value;
+  if (!orderId) { alert('Selecione um pedido.'); return; }
+  if (!navigator.geolocation) { alert('Geolocalização não suportada neste dispositivo.'); return; }
+  connectLocationSocket(orderId); // reutiliza; driver também recebe eco, sem problema
+  state.watchId = navigator.geolocation.watchPosition((pos) => {
+    if (state.locationSocket && state.locationSocket.readyState === 1) {
+      state.locationSocket.send(JSON.stringify({
+        latitude: pos.coords.latitude, longitude: pos.coords.longitude,
+        speed_kmh: pos.coords.speed ? pos.coords.speed * 3.6 : null,
+      }));
+      $('sharingStatus').textContent = `A partilhar: ${pos.coords.latitude.toFixed(4)}, ${pos.coords.longitude.toFixed(4)}`;
+    }
+  }, (err) => alert('Erro de GPS: ' + err.message), {enableHighAccuracy:true, maximumAge:5000});
+  $('startSharingBtn').style.display='none'; $('stopSharingBtn').style.display='block';
+});
+
+$('stopSharingBtn').addEventListener('click', () => {
+  if (state.watchId) navigator.geolocation.clearWatch(state.watchId);
+  if (state.locationSocket) state.locationSocket.close();
+  $('sharingStatus').textContent = 'Partilha terminada.';
+  $('startSharingBtn').style.display='block'; $('stopSharingBtn').style.display='none';
+});
+
+async function loadAdminSummary() {
+  try {
+    const s = await api('/api/v1/admin/summary');
+    $('adminSummary').innerHTML = `
+      <p>Utilizadores: <b>${s.users}</b></p>
+      <p>Produtos: <b>${s.products}</b></p>
+      <p>Pedidos: <b>${s.orders}</b></p>
+      <p>Valor total de vendas: <b>Kz ${s.sales_value.toLocaleString('pt-PT')}</b></p>
+      <p>Taxa de comissão: <b>${(s.commission_rate*100).toFixed(1)}%</b></p>
+      <p>Comissão já ganha: <b>Kz ${s.commission_earned.toLocaleString('pt-PT')}</b></p>
+      <p>Pagamentos pendentes: <b>${s.pending_payments}</b></p>`;
+  } catch(err) { $('adminSummary').innerHTML = `<div class="error">${err.message}</div>`; }
+}
+
+/* ---------------- INIT ---------------- */
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('./sw.js').catch(()=>{});
+}
+renderAuthState();
+</script>
+</body>
+</html>
+      --bg:#10160F; --text:#EDF3EA; --card:#1A2418; --line:#2C3A28; --cream:#10160F; --ink:#EDF3EA;
+    }
+  }
+  :root[data-theme="dark"]{
+    --bg:#10160F; --text:#EDF3EA; --card:#1A2418; --line:#2C3A28; --cream:#10160F; --ink:#EDF3EA;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;height:100%;background:var(--bg);color:var(--text);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;}
+  #app{max-width:480px;margin:0 auto;min-height:100dvh;display:flex;flex-direction:column;
+    background:var(--bg);position:relative;}
+  header.top{padding:18px 20px 14px;display:flex;align-items:center;justify-content:space-between;
+    border-bottom:1px solid var(--line);}
+  header.top .brand{display:flex;align-items:center;gap:10px;}
+  header.top .brand .leaf{font-size:22px;}
+  header.top h1{font-size:17px;margin:0;font-weight:700;letter-spacing:-0.01em;}
+  header.top .sub{font-size:12px;color:var(--green);margin-top:1px;}
+  .icon-btn{background:none;border:none;color:var(--text);font-size:20px;cursor:pointer;padding:6px;}
+  main{flex:1;overflow-y:auto;padding:16px 16px 90px;}
+  nav.tabbar{position:sticky;bottom:0;display:flex;background:var(--card);
+    border-top:1px solid var(--line);padding:8px 6px calc(8px + env(safe-area-inset-bottom));}
+  nav.tabbar button{flex:1;background:none;border:none;color:var(--text);opacity:.55;
+    display:flex;flex-direction:column;align-items:center;gap:2px;font-size:11px;cursor:pointer;
+    padding:4px 0;font-family:inherit;}
+  nav.tabbar button.active{opacity:1;color:var(--green);}
+  nav.tabbar .ic{font-size:19px;}
+  .screen{display:none;} .screen.active{display:block;}
+  .field{margin-bottom:12px;}
+  .field label{display:block;font-size:12.5px;color:var(--text);opacity:.7;margin-bottom:5px;}
+  .field input, .field select, .field textarea{
+    width:100%;padding:11px 12px;border-radius:10px;border:1px solid var(--line);
+    background:var(--card);color:var(--text);font-size:15px;font-family:inherit;}
+  .field textarea{resize:vertical;min-height:70px;}
+  .btn{display:block;width:100%;padding:13px;border-radius:10px;border:none;
+    background:var(--green);color:#fff;font-size:15px;font-weight:600;cursor:pointer;
+    font-family:inherit;text-align:center;}
+  .btn.secondary{background:transparent;border:1px solid var(--green);color:var(--green);}
+  .btn.clay{background:var(--clay);}
+  .btn.ghost{background:none;color:var(--green);font-weight:600;padding:8px;}
+  .btn:disabled{opacity:.5;cursor:default;}
+  .segmented{display:flex;border:1px solid var(--line);border-radius:10px;overflow:hidden;margin-bottom:18px;}
+  .segmented button{flex:1;padding:10px;border:none;background:var(--card);color:var(--text);
+    font-family:inherit;font-size:13.5px;cursor:pointer;}
+  .segmented button.active{background:var(--green);color:#fff;}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px;margin-bottom:12px;}
+  .card h3{margin:0 0 2px;font-size:15.5px;}
+  .meta{font-size:12.5px;opacity:.65;margin:2px 0 8px;}
+  .price-row{display:flex;justify-content:space-between;align-items:center;margin-top:6px;}
+  .price{font-weight:700;color:var(--green-deep);font-size:15px;}
+  .price[data-theme-dark]{color:var(--green-light);}
+  .tag{display:inline-block;font-size:11px;padding:3px 8px;border-radius:20px;
+    background:var(--line);opacity:.8;margin-right:6px;}
+  .status{font-size:11.5px;padding:3px 9px;border-radius:20px;font-weight:600;}
+  .status.pending{background:#F4E3C3;color:#7A5A16;}
+  .status.pago{background:#D6ECD4;color:#1E4A28;}
+  .status.confirmado{background:#D3E4F2;color:#1B4C77;}
+  .status.a_caminho{background:#E4D6F2;color:#4B1B77;}
+  .status.entregue{background:#D6ECD4;color:#1E4A28;}
+  .empty{text-align:center;padding:60px 20px;opacity:.6;font-size:14px;}
+  .row{display:flex;gap:10px;}
+  .row > *{flex:1;}
+  h2.section{font-size:13px;text-transform:none;letter-spacing:0;opacity:.55;margin:4px 0 12px;}
+  .banner{background:var(--green-deep);color:#fff;border-radius:14px;padding:16px;margin-bottom:16px;}
+  .banner .big{font-size:22px;font-weight:700;}
+  .banner .small{font-size:12.5px;opacity:.85;margin-top:2px;}
+  #map{height:220px;border-radius:14px;margin-bottom:12px;border:1px solid var(--line);}
+  .chatlist{display:flex;flex-direction:column;gap:8px;padding-bottom:8px;}
+  .bubble{max-width:78%;padding:9px 12px;border-radius:14px;font-size:14px;line-height:1.35;}
+  .bubble.me{align-self:flex-end;background:var(--green);color:#fff;border-bottom-right-radius:4px;}
+  .bubble.them{align-self:flex-start;background:var(--card);border:1px solid var(--line);border-bottom-left-radius:4px;}
+  .bubble .price-pill{display:inline-block;margin-top:5px;font-size:11.5px;font-weight:700;
+    background:rgba(255,255,255,.25);padding:2px 8px;border-radius:10px;}
+  .bubble.them .price-pill{background:var(--clay);color:#fff;}
+  .chat-input{position:sticky;bottom:0;display:flex;gap:8px;padding:10px 0;background:var(--bg);}
+  .chat-input input{flex:1;}
+  .error{background:#F8E3DE;color:var(--danger);padding:10px 12px;border-radius:10px;font-size:13px;margin-bottom:12px;}
+  .success{background:#DFF0DA;color:var(--green-deep);padding:10px 12px;border-radius:10px;font-size:13px;margin-bottom:12px;}
+  .commission-note{font-size:12px;opacity:.65;margin-top:10px;line-height:1.5;}
+  .modal-back{position:fixed;inset:0;background:rgba(0,0,0,.45);display:flex;align-items:flex-end;z-index:50;}
+  .modal{background:var(--bg);width:100%;max-width:480px;margin:0 auto;border-radius:18px 18px 0 0;
+    padding:20px 20px calc(20px + env(safe-area-inset-bottom));max-height:88vh;overflow-y:auto;}
+  .modal-handle{width:36px;height:4px;background:var(--line);border-radius:4px;margin:0 auto 14px;}
+  a{color:var(--green);}
+</style>
+</head>
+<body>
+<div id="app">
+
+  <header class="top">
+    <div class="brand"><span class="leaf">🌱</span>
+      <div><h1>AgroLink Angola</h1><div class="sub" id="roleTag">Do produtor ao mercado</div></div>
+    </div>
+    <button class="icon-btn" id="settingsBtn" title="Definições">⚙️</button>
+  </header>
+
+  <main id="main">
+
+    <!-- LOGIN / REGISTO -->
+    <section class="screen active" id="screen-auth">
+      <div class="segmented" id="authSeg">
+        <button class="active" data-mode="login">Entrar</button>
+        <button data-mode="register">Criar conta</button>
+      </div>
+
+      <div id="authError"></div>
+
+      <form id="loginForm">
+        <div class="field"><label>Telefone</label><input type="tel" id="loginPhone" placeholder="9XX XXX XXX" required></div>
+        <div class="field"><label>Senha</label><input type="password" id="loginPass" required></div>
+        <button class="btn" type="submit">Entrar</button>
+      </form>
+
+      <form id="registerForm" style="display:none">
+        <div class="field"><label>Nome completo</label><input id="regName" required></div>
+        <div class="field"><label>Telefone</label><input type="tel" id="regPhone" placeholder="9XX XXX XXX" required></div>
+        <div class="field"><label>Senha (mín. 6 caracteres)</label><input type="password" id="regPass" minlength="6" required></div>
+        <div class="field"><label>Perfil</label>
+          <select id="regRole">
+            <option value="buyer">Comprador</option>
+            <option value="farmer">Agricultor / Vendedor</option>
+            <option value="driver">Transportador</option>
+          </select>
+        </div>
+        <div class="field"><label>Província</label><input id="regProvince" placeholder="ex: Huambo"></div>
+        <div class="field" id="regExpressField"><label>Nº Multicaixa Express (para receber pagamentos)</label>
+          <input id="regExpress" placeholder="9XX XXX XXX"></div>
+        <div class="field" id="regIbanField"><label>IBAN (opcional)</label>
+          <input id="regIban" placeholder="AO06 0000 ..."></div>
+        <button class="btn" type="submit">Criar conta</button>
+      </form>
+
+      <p class="commission-note">Ao registar-se concorda que a AgroLink cobra uma comissão moderada de <b id="commissionPct">4%</b> sobre cada venda concluída, para manter a plataforma, o suporte e a segurança dos pagamentos.</p>
+    </section>
+
+    <!-- MERCADO -->
+    <section class="screen" id="screen-market">
+      <div class="field"><input id="searchInput" placeholder="🔎 Procurar produto (ex: tomate, milho...)"></div>
+      <div id="productList"></div>
+    </section>
+
+    <!-- PEDIDOS -->
+    <section class="screen" id="screen-orders">
+      <h2 class="section">OS SEUS PEDIDOS</h2>
+      <div id="ordersList"></div>
+    </section>
+
+    <!-- RASTREIO / ENTREGA -->
+    <section class="screen" id="screen-tracking">
+      <button class="btn ghost" id="backFromTracking">← Voltar aos pedidos</button>
+      <div id="trackingStatus" class="banner"></div>
+      <div id="map"></div>
+      <div class="card" id="trackingMeta"></div>
+      <button class="btn secondary" id="openChatFromTracking">💬 Conversar sobre este pedido</button>
+    </section>
+
+    <!-- CHAT -->
+    <section class="screen" id="screen-chat">
+      <button class="btn ghost" id="backFromChat">← Voltar</button>
+      <div class="chatlist" id="chatList"></div>
+      <div class="chat-input">
+        <input id="chatMsgInput" placeholder="Escreva uma mensagem...">
+        <input id="chatPriceInput" type="number" placeholder="Kz (opcional)" style="max-width:110px">
+        <button class="btn" id="sendChatBtn" style="width:auto;padding:11px 16px">➤</button>
+      </div>
+    </section>
+
+    <!-- PERFIL -->
+    <section class="screen" id="screen-profile">
+      <div class="card" id="profileCard"></div>
+
+      <div id="farmerPanel" style="display:none">
+        <h2 class="section">PUBLICAR PRODUÇÃO</h2>
+        <div class="field"><label>Produto</label><input id="pName"></div>
+        <div class="field"><label>Categoria</label>
+          <select id="pCategory"><option>Hortícolas</option><option>Frutas</option><option>Grãos</option><option>Raízes</option><option>Tubérculos</option><option>Outros</option></select></div>
+        <div class="row">
+          <div class="field"><label>Preço (Kz)</label><input id="pPrice" type="number" min="1"></div>
+          <div class="field"><label>Quantidade</label><input id="pQty" type="number" min="1"></div>
+        </div>
+        <div class="row">
+          <div class="field"><label>Unidade</label>
+            <select id="pUnit"><option>kg</option><option>tonelada</option><option>saco</option><option>caixa</option><option>unidade</option></select></div>
+          <div class="field"><label>Província</label><input id="pProvince"></div>
+        </div>
+        <div class="field"><label>Descrição</label><textarea id="pDesc"></textarea></div>
+        <button class="btn clay" id="publishBtn">🌱 Publicar produto</button>
+      </div>
+
+      <div id="driverPanel" style="display:none">
+        <h2 class="section">O SEU VEÍCULO</h2>
+        <div class="field"><label>Matrícula</label><input id="vPlate"></div>
+        <div class="row">
+          <div class="field"><label>Tipo</label>
+            <select id="vType"><option>camião</option><option>carrinha</option><option>tractor com reboque</option><option>mota-táxi de carga</option></select></div>
+          <div class="field"><label>Capacidade (kg)</label><input id="vCap" type="number"></div>
+        </div>
+        <div class="field"><label>Modelo</label><input id="vModel"></div>
+        <button class="btn secondary" id="saveVehicleBtn">Guardar veículo</button>
+
+        <h2 class="section" style="margin-top:20px">PARTILHAR LOCALIZAÇÃO EM TEMPO REAL</h2>
+        <div class="field"><label>Pedido a transportar</label><select id="driverOrderSelect"></select></div>
+        <button class="btn" id="startSharingBtn">📍 Iniciar partilha de localização</button>
+        <button class="btn secondary" id="stopSharingBtn" style="display:none;margin-top:8px">Parar partilha</button>
+        <p class="commission-note" id="sharingStatus"></p>
+      </div>
+
+      <div id="adminPanel" style="display:none">
+        <h2 class="section">PAINEL DO ADMINISTRADOR</h2>
+        <div class="card" id="adminSummary"></div>
+      </div>
+
+      <button class="btn secondary" id="logoutBtn" style="margin-top:18px">Terminar sessão</button>
+    </section>
+
+  </main>
+
+  <nav class="tabbar" id="tabbar" style="display:none">
+    <button data-screen="market" class="active"><span class="ic">🛒</span>Mercado</button>
+    <button data-screen="orders"><span class="ic">📦</span>Pedidos</button>
+    <button data-screen="profile"><span class="ic">👤</span>Perfil</button>
+  </nav>
+</div>
+
+<script>
+/* ---------------------------------------------------------------------
+   AgroLink Angola — App móvel (PWA)
+   Ligação a uma API própria (FastAPI). Configure o endereço em Definições.
+--------------------------------------------------------------------- */
+const state = {
   apiBase: localStorage.getItem('agrolink_api') || 'http://localhost:8000',
   token: localStorage.getItem('agrolink_token') || '',
   user: JSON.parse(localStorage.getItem('agrolink_user') || 'null'),
