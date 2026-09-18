@@ -2,10 +2,11 @@ import os
 import json
 from datetime import datetime, timedelta
 from typing import Optional, List, Dict
-from fastapi.statifiles import StaticFiles
+
+from fastapi import FastAPI, Depends, HTTPException, WebSocket, WebSocketDisconnect
+from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
-from fastapi import FastAPI, Depends, HTTPException, Header, WebSocket, WebSocketDisconnect
-from fastapi.security import HTTPBearer
+from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 from jose import jwt, JWTError
@@ -15,42 +16,17 @@ from sqlalchemy import (
 )
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, sessionmaker, Session
 
-#
-# Config de segurança para autenticação via token JWT
+# ---------------------------------------------------------------------------
+# Config
 # ---------------------------------------------------------------------------
 DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./agrolink.db")
 SECRET_KEY = os.getenv("SECRET_KEY", "CHANGE_THIS_SECRET")
 ALGORITHM = "HS256"
 
-#Ativa o esquema bearer para o botao authorize no swagger
-security = HTTPBearer()
-
-#Inicializa da aplicação 
-app = FastAPI(title="AgroLink Angola API", version="1.0.0", description="API doo ecosistema AgroLink Angola")
-
-#Configuracoes CORS logo a seguir 
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
-
-# Servir ficheiros estaticos se existirem no mesmo diretorio
-if os.path.exists("manifest.json"):
-    @app.get("/manifest.json")
-    async def get_manifest():
-        return FileResponse("manifest.json")
-    
-#Adicionar também suporte a ficheiros de icones e
-if os.path.exists("static"):
-    app.mount("/static", StaticFiles(directory="static"), name="static")
-
-
-
 # Comissão da plataforma. Moderada por defeito (4%). Configurável via env var.
 COMMISSION_RATE = float(os.getenv("COMMISSION_RATE", "0.04"))  # 4%
+
+security = HTTPBearer()  # ativa o botão "Authorize" no /docs
 
 connect_args = {"check_same_thread": False} if DATABASE_URL.startswith("sqlite") else {}
 engine = create_engine(DATABASE_URL, connect_args=connect_args)
@@ -70,11 +46,9 @@ class User(Base):
     name: Mapped[str] = mapped_column(String(120))
     phone: Mapped[str] = mapped_column(String(30), unique=True, index=True)
     password_hash: Mapped[str] = mapped_column(String(255))
-    # buyer | farmer | driver | admin
-    role: Mapped[str] = mapped_column(String(30), default="buyer")
+    role: Mapped[str] = mapped_column(String(30), default="buyer")  # buyer|farmer|driver|admin
     province: Mapped[Optional[str]] = mapped_column(String(80), nullable=True)
     verified: Mapped[bool] = mapped_column(Boolean, default=False)
-    # dados de pagamento do utilizador (para receber, ex: agricultor/transportador)
     iban: Mapped[Optional[str]] = mapped_column(String(40), nullable=True)
     express_phone: Mapped[Optional[str]] = mapped_column(String(30), nullable=True)
 
@@ -111,13 +85,11 @@ class Order(Base):
     driver_id: Mapped[Optional[int]] = mapped_column(ForeignKey("users.id"), nullable=True)
     quantity: Mapped[float] = mapped_column(Float)
     total: Mapped[float] = mapped_column(Float)
-    # pending | confirmed | a_caminho | entregue | cancelado
     status: Mapped[str] = mapped_column(String(40), default="pending")
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
 
 
 class LocationPing(Base):
-    """Última posição (e histórico) do veículo/transportador em movimento."""
     __tablename__ = "location_pings"
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     order_id: Mapped[int] = mapped_column(ForeignKey("orders.id"), index=True)
@@ -129,7 +101,6 @@ class LocationPing(Base):
 
 
 class Conversation(Base):
-    """Uma conversa entre comprador e agricultor (opcionalmente ligada a um produto/pedido)."""
     __tablename__ = "conversations"
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     buyer_id: Mapped[int] = mapped_column(ForeignKey("users.id"))
@@ -152,20 +123,26 @@ class Payment(Base):
     __tablename__ = "payments"
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     order_id: Mapped[int] = mapped_column(ForeignKey("orders.id"), unique=True)
-    # multicaixa_express | iban
-    method: Mapped[str] = mapped_column(String(30))
-    reference: Mapped[str] = mapped_column(String(80))  # nº telefone Express ou IBAN
+    method: Mapped[str] = mapped_column(String(30))  # multicaixa_express | iban
+    reference: Mapped[str] = mapped_column(String(80))
     amount: Mapped[float] = mapped_column(Float)
     commission_amount: Mapped[float] = mapped_column(Float)
     net_to_seller: Mapped[float] = mapped_column(Float)
-    # pendente | pago | falhou
     status: Mapped[str] = mapped_column(String(30), default="pendente")
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
 
 
 Base.metadata.create_all(engine)
 pwd = CryptContext(schemes=["bcrypt"], deprecated="auto")
-app = FastAPI(title="AgroLink Angola API", version="2.0.0")
+
+# ---------------------------------------------------------------------------
+# App — UMA ÚNICA instância. Tudo se regista aqui a partir daqui para baixo.
+# ---------------------------------------------------------------------------
+app = FastAPI(
+    title="AgroLink Angola API",
+    version="2.0.1",
+    description="API do ecossistema AgroLink Angola",
+)
 
 app.add_middleware(
     CORSMiddleware,
@@ -217,7 +194,7 @@ class Register(BaseModel):
     name: str
     phone: str
     password: str = Field(min_length=6)
-    role: str = "buyer"          # buyer | farmer | driver
+    role: str = "buyer"
     province: Optional[str] = None
     iban: Optional[str] = None
     express_phone: Optional[str] = None
@@ -266,22 +243,44 @@ class MessageIn(BaseModel):
 
 class PaymentIn(BaseModel):
     order_id: int
-    method: str  # "multicaixa_express" | "iban"
+    method: str
     reference: str
 
 
 # ---------------------------------------------------------------------------
-# Auth & Users
+# Health & root
 # ---------------------------------------------------------------------------
-@app.get("/",response_class=FileResponse)
-def read_index():
-    #Serve a página web do frontend (index.html)."""
-    return FileResponse("index.html")
 @app.get("/health")
 def health():
     return {"status": "ok", "app": "AgroLink Angola", "commission_rate": COMMISSION_RATE}
 
 
+@app.get("/")
+def read_index():
+    # Só tenta servir um frontend estático se ele existir; caso contrário,
+    # devolve um JSON simples em vez de rebentar com erro de arranque.
+    if os.path.exists("index.html"):
+        return FileResponse("index.html", media_type="text/html")
+    return {"status": "ok", "message": "AgroLink Angola API — veja /docs"}
+
+
+@app.get("/manifest.json")
+def read_manifest():
+    if os.path.exists("manifest.json"):
+        return FileResponse("manifest.json", media_type="application/manifest+json")
+    raise HTTPException(404, "manifest.json não encontrado.")
+
+
+@app.get("/sw.js")
+def read_service_worker():
+    if os.path.exists("sw.js"):
+        return FileResponse("sw.js", media_type="application/javascript")
+    raise HTTPException(404, "sw.js não encontrado.")
+
+
+# ---------------------------------------------------------------------------
+# Auth & Users
+# ---------------------------------------------------------------------------
 @app.post("/api/v1/auth/register")
 def register(x: Register, s: Session = Depends(db)):
     if s.scalar(select(User).where(User.phone == x.phone)):
@@ -397,7 +396,6 @@ def orders(u: User = Depends(current_user), s: Session = Depends(db)):
 # Real-time location (WebSocket)
 # ---------------------------------------------------------------------------
 class LocationHub:
-    """Mantém as ligações WebSocket que acompanham cada pedido (order_id)."""
     def __init__(self):
         self.rooms: Dict[int, List[WebSocket]] = {}
 
@@ -422,12 +420,6 @@ location_hub = LocationHub()
 
 @app.websocket("/ws/location/{order_id}")
 async def ws_location(websocket: WebSocket, order_id: int, token: str):
-    """
-    O transportador liga-se a este socket e envia:
-        {"latitude": -8.83, "longitude": 13.23, "speed_kmh": 42}
-    Todos os outros ligados ao mesmo pedido (comprador, agricultor) recebem
-    a posição em tempo real. As posições também ficam gravadas na BD.
-    """
     s = SessionLocal()
     user = user_from_token(token, s)
     order = s.get(Order, order_id)
@@ -598,7 +590,6 @@ def create_payment(x: PaymentIn, u: User = Depends(current_user), s: Session = D
 
 @app.post("/api/v1/payments/{payment_id}/confirm")
 def confirm_payment(payment_id: int, u: User = Depends(current_user), s: Session = Depends(db)):
-    """Simula a confirmação vinda do gateway (webhook em produção)."""
     if u.role != "admin":
         raise HTTPException(403, "Apenas o administrador pode confirmar pagamentos manualmente.")
     payment = s.get(Payment, payment_id)
@@ -625,6 +616,21 @@ def admin_summary(u: User = Depends(current_user), s: Session = Depends(db)):
         "commission_earned": round(sum(p.commission_amount for p in payments if p.status == "pago"), 2),
         "pending_payments": len([p for p in payments if p.status == "pendente"]),
     }
+
+
+# ---------------------------------------------------------------------------
+# Frontend estático opcional — só monta se a pasta existir.
+# Registado por ÚLTIMO, para nunca tapar as rotas /api e /ws acima.
+# ---------------------------------------------------------------------------
+if os.path.isdir("static"):
+    app.mount("/static", StaticFiles(directory="static"), name="static")
+
+
+# ---------------------------------------------------------------------------
+# Execução direta (python app.py). No Render isto é redundante porque o
+# Start Command já corre "uvicorn app:app --host 0.0.0.0 --port $PORT",
+# mas fica aqui como rede de segurança para correr localmente também.
+# ---------------------------------------------------------------------------
 if __name__ == "__main__":
     import uvicorn
     port = int(os.getenv("PORT", 8000))
