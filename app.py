@@ -2,6 +2,7 @@ import os
 import json
 from datetime import datetime, timedelta
 from typing import Optional, List, Dict
+from fastapi.statifiles import StaticFiles
 from fastapi.responses import FileResponse
 from fastapi import FastAPI, Depends, HTTPException, Header, WebSocket, WebSocketDisconnect
 from fastapi.security import HTTPBearer
@@ -14,6 +15,15 @@ from sqlalchemy import (
 )
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, sessionmaker, Session
 
+# Servir ficheiros estaticos se existirem no mesmo diretorio
+if os.path.exists("manifest.json"):
+    @app.get("/manifest.json")
+    async def get_manifest():
+        return FileResponse("manifest.json")
+    
+#Adicionar também suporte a ficheiros de icones e estaticos
+if os.path.exists("static"):
+    app.mount("/static", StaticFiles(directory="static"), name="static")
 
 # Config de segurança para autenticação via token JWT
 # ---------------------------------------------------------------------------
