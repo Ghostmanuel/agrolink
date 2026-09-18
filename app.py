@@ -15,16 +15,7 @@ from sqlalchemy import (
 )
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, sessionmaker, Session
 
-# Servir ficheiros estaticos se existirem no mesmo diretorio
-if os.path.exists("manifest.json"):
-    @app.get("/manifest.json")
-    async def get_manifest():
-        return FileResponse("manifest.json")
-    
-#Adicionar também suporte a ficheiros de icones e estaticos
-if os.path.exists("static"):
-    app.mount("/static", StaticFiles(directory="static"), name="static")
-
+#
 # Config de segurança para autenticação via token JWT
 # ---------------------------------------------------------------------------
 DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./agrolink.db")
@@ -36,6 +27,25 @@ security = HTTPBearer()
 
 #Inicializa da aplicação 
 app = FastAPI(title="AgroLink Angola API", version="1.0.0", description="API doo ecosistema AgroLink Angola")
+
+#Configuracoes CORS logo a seguir 
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+# Servir ficheiros estaticos se existirem no mesmo diretorio
+if os.path.exists("manifest.json"):
+    @app.get("/manifest.json")
+    async def get_manifest():
+        return FileResponse("manifest.json")
+    
+#Adicionar também suporte a ficheiros de icones e
+if os.path.exists("static"):
+    app.mount("/static", StaticFiles(directory="static"), name="static")
 
 
 
