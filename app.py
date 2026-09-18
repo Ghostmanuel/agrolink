@@ -4,6 +4,7 @@ from datetime import datetime, timedelta
 from typing import Optional, List, Dict
 
 from fastapi import FastAPI, Depends, HTTPException, Header, WebSocket, WebSocketDisconnect
+from fastapi.security import HTTPBearer
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 from jose import jwt, JWTError
@@ -13,12 +14,20 @@ from sqlalchemy import (
 )
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, sessionmaker, Session
 
-# ---------------------------------------------------------------------------
-# Config
+
+# Config de segurança para autenticação via token JWT
 # ---------------------------------------------------------------------------
 DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./agrolink.db")
 SECRET_KEY = os.getenv("SECRET_KEY", "CHANGE_THIS_SECRET")
 ALGORITHM = "HS256"
+
+#Ativa o esquema bearer para o botao authorize no swagger
+security = HTTPBearer()
+
+#Inicializa da aplicação 
+app = FastAPI(title="AgroLink Angola API", version="1.0.0", description="API doo ecosistema AgroLink Angola")
+
+
 
 # Comissão da plataforma. Moderada por defeito (4%). Configurável via env var.
 COMMISSION_RATE = float(os.getenv("COMMISSION_RATE", "0.04"))  # 4%
@@ -161,11 +170,9 @@ def token_for(user):
     return jwt.encode(payload, SECRET_KEY, algorithm=ALGORITHM)
 
 
-def current_user(authorization: Optional[str] = Header(None), s: Session = Depends(db)):
-    if not authorization or not authorization.startswith("Bearer "):
-        raise HTTPException(401, "Autenticação necessária.")
+def current_user(credentials: HTTPAuthorizationCredentials = Depends(security), s: Session = Depends(db)):
     try:
-        data = jwt.decode(authorization[7:], SECRET_KEY, algorithms=[ALGORITHM])
+        data = jwt.decode(credentials.credentials, SECRET_KEY, algorithms=[ALGORITHM])
         user = s.get(User, int(data["sub"]))
         if not user:
             raise HTTPException(401, "Utilizador inválido.")
@@ -594,3 +601,4 @@ def admin_summary(u: User = Depends(current_user), s: Session = Depends(db)):
         "commission_earned": round(sum(p.commission_amount for p in payments if p.status == "pago"), 2),
         "pending_payments": len([p for p in payments if p.status == "pendente"]),
     }
+
