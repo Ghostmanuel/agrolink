@@ -1,4 +1,4 @@
-const CACHE = "agrolink-v1";
+const CACHE = "agrolink-v2";
 const SHELL = ["./index.html", "./manifest.json"];
 
 self.addEventListener("install", (event) => {
