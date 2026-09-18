@@ -4,9 +4,8 @@ from datetime import datetime, timedelta
 from typing import Optional, List, Dict
 
 from fastapi import FastAPI, Depends, HTTPException, Header, WebSocket, WebSocketDisconnect
-from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
+from fastapi.security import HTTPBearer
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse
 from pydantic import BaseModel, Field
 from jose import jwt, JWTError
 from passlib.context import CryptContext
@@ -15,48 +14,53 @@ from sqlalchemy import (
 )
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, sessionmaker, Session
 
-# ---------------------------------------------------------------------------
-# Configuração de Ambiente e Base de Dados
-# ---------------------------------------------------------------------------
-# Configuração de Ambiente e Base de Dados
+
+# Config de segurança para autenticação via token JWT
 # ---------------------------------------------------------------------------
 DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./agrolink.db")
 SECRET_KEY = os.getenv("SECRET_KEY", "CHANGE_THIS_SECRET")
 ALGORITHM = "HS256"
 
-# Comissão da plataforma (4% por defeito)
-COMMISSION_RATE = float(os.getenv("COMMISSION_RATE", "0.04"))
+#Ativa o esquema bearer para o botao authorize no swagger
+security = HTTPBearer()
+
+#Inicializa da aplicação 
+app = FastAPI(title="AgroLink Angola API", version="1.0.0", description="API doo ecosistema AgroLink Angola")
+
+
+
+# Comissão da plataforma. Moderada por defeito (4%). Configurável via env var.
+COMMISSION_RATE = float(os.getenv("COMMISSION_RATE", "0.04"))  # 4%
 
 connect_args = {"check_same_thread": False} if DATABASE_URL.startswith("sqlite") else {}
 engine = create_engine(DATABASE_URL, connect_args=connect_args)
 SessionLocal = sessionmaker(bind=engine)
 
 
-# Definição correta da classe base no SQLAlchemy 2.0
 class Base(DeclarativeBase):
     pass
 
 
 # ---------------------------------------------------------------------------
-# Modelos da Base de Dados
+# Models
 # ---------------------------------------------------------------------------
 class User(Base):
-    _tablename_ = "users"
-
+    __tablename__ = "users"
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     name: Mapped[str] = mapped_column(String(120))
     phone: Mapped[str] = mapped_column(String(30), unique=True, index=True)
     password_hash: Mapped[str] = mapped_column(String(255))
-    role: Mapped[str] = mapped_column(String(30), default="buyer")  # buyer | farmer | driver | admin
+    # buyer | farmer | driver | admin
+    role: Mapped[str] = mapped_column(String(30), default="buyer")
     province: Mapped[Optional[str]] = mapped_column(String(80), nullable=True)
     verified: Mapped[bool] = mapped_column(Boolean, default=False)
+    # dados de pagamento do utilizador (para receber, ex: agricultor/transportador)
     iban: Mapped[Optional[str]] = mapped_column(String(40), nullable=True)
     express_phone: Mapped[Optional[str]] = mapped_column(String(30), nullable=True)
 
 
 class Vehicle(Base):
-    _tablename_ = "vehicles"
-
+    __tablename__ = "vehicles"
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     driver_id: Mapped[int] = mapped_column(ForeignKey("users.id"), unique=True)
     plate: Mapped[str] = mapped_column(String(20))
@@ -66,8 +70,7 @@ class Vehicle(Base):
 
 
 class Product(Base):
-    _tablename_ = "products"
-
+    __tablename__ = "products"
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     producer_id: Mapped[int] = mapped_column(ForeignKey("users.id"))
     name: Mapped[str] = mapped_column(String(120), index=True)
@@ -81,21 +84,21 @@ class Product(Base):
 
 
 class Order(Base):
-    _tablename_ = "orders"
-
+    __tablename__ = "orders"
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     product_id: Mapped[int] = mapped_column(ForeignKey("products.id"))
     buyer_id: Mapped[int] = mapped_column(ForeignKey("users.id"))
     driver_id: Mapped[Optional[int]] = mapped_column(ForeignKey("users.id"), nullable=True)
     quantity: Mapped[float] = mapped_column(Float)
     total: Mapped[float] = mapped_column(Float)
+    # pending | confirmed | a_caminho | entregue | cancelado
     status: Mapped[str] = mapped_column(String(40), default="pending")
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
 
 
 class LocationPing(Base):
-    _tablename_ = "location_pings"
-
+    """Última posição (e histórico) do veículo/transportador em movimento."""
+    __tablename__ = "location_pings"
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     order_id: Mapped[int] = mapped_column(ForeignKey("orders.id"), index=True)
     driver_id: Mapped[int] = mapped_column(ForeignKey("users.id"))
@@ -106,8 +109,8 @@ class LocationPing(Base):
 
 
 class Conversation(Base):
-    _tablename_ = "conversations"
-
+    """Uma conversa entre comprador e agricultor (opcionalmente ligada a um produto/pedido)."""
+    __tablename__ = "conversations"
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     buyer_id: Mapped[int] = mapped_column(ForeignKey("users.id"))
     seller_id: Mapped[int] = mapped_column(ForeignKey("users.id"))
@@ -116,8 +119,7 @@ class Conversation(Base):
 
 
 class ChatMessage(Base):
-    _tablename_ = "chat_messages"
-
+    __tablename__ = "chat_messages"
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     conversation_id: Mapped[int] = mapped_column(ForeignKey("conversations.id"), index=True)
     sender_id: Mapped[int] = mapped_column(ForeignKey("users.id"))
@@ -127,29 +129,24 @@ class ChatMessage(Base):
 
 
 class Payment(Base):
-    _tablename_ = "payments"
-
+    __tablename__ = "payments"
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     order_id: Mapped[int] = mapped_column(ForeignKey("orders.id"), unique=True)
+    # multicaixa_express | iban
     method: Mapped[str] = mapped_column(String(30))
-    reference: Mapped[str] = mapped_column(String(80))
+    reference: Mapped[str] = mapped_column(String(80))  # nº telefone Express ou IBAN
     amount: Mapped[float] = mapped_column(Float)
     commission_amount: Mapped[float] = mapped_column(Float)
     net_to_seller: Mapped[float] = mapped_column(Float)
+    # pendente | pago | falhou
     status: Mapped[str] = mapped_column(String(30), default="pendente")
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
 
 
 Base.metadata.create_all(engine)
-
-
-Base.metadata.create_all(engine)
 pwd = CryptContext(schemes=["bcrypt"], deprecated="auto")
-security = HTTPBearer()
-
 app = FastAPI(title="AgroLink Angola API", version="2.0.0")
 
-# Suporte total a CORS para evitar falhas de comunicação com o frontend
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -159,9 +156,6 @@ app.add_middleware(
 )
 
 
-# ---------------------------------------------------------------------------
-# Auxiliares e Autenticação
-# ---------------------------------------------------------------------------
 def db():
     s = SessionLocal()
     try:
@@ -171,11 +165,8 @@ def db():
 
 
 def token_for(user):
-    payload = {
-        "sub": str(user.id),
-        "role": user.role,
-        "exp": datetime.utcnow() + timedelta(hours=12)
-    }
+    payload = {"sub": str(user.id), "role": user.role,
+               "exp": datetime.utcnow() + timedelta(hours=12)}
     return jwt.encode(payload, SECRET_KEY, algorithm=ALGORITHM)
 
 
@@ -191,6 +182,7 @@ def current_user(credentials: HTTPAuthorizationCredentials = Depends(security), 
 
 
 def user_from_token(token: str, s: Session) -> Optional[User]:
+    """Versão para WebSockets (o token vem por query string, não por header)."""
     try:
         data = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
         return s.get(User, int(data["sub"]))
@@ -199,13 +191,13 @@ def user_from_token(token: str, s: Session) -> Optional[User]:
 
 
 # ---------------------------------------------------------------------------
-# Schemas Pydantic
+# Schemas
 # ---------------------------------------------------------------------------
 class Register(BaseModel):
     name: str
     phone: str
     password: str = Field(min_length=6)
-    role: str = "buyer"
+    role: str = "buyer"          # buyer | farmer | driver
     province: Optional[str] = None
     iban: Optional[str] = None
     express_phone: Optional[str] = None
@@ -254,38 +246,26 @@ class MessageIn(BaseModel):
 
 class PaymentIn(BaseModel):
     order_id: int
-    method: str
+    method: str  # "multicaixa_express" | "iban"
     reference: str
 
 
 # ---------------------------------------------------------------------------
-# Frontend & Health check
+# Auth & Users
 # ---------------------------------------------------------------------------
-@app.get("/")
-def read_index():
-    if not os.path.exists("index.html"):
-        raise HTTPException(404, "O ficheiro index.html não foi encontrado no diretório do servidor.")
-    return FileResponse("index.html")
-
-
 @app.get("/health")
 def health():
     return {"status": "ok", "app": "AgroLink Angola", "commission_rate": COMMISSION_RATE}
 
 
-# ---------------------------------------------------------------------------
-# Autenticação e Utilizadores
-# ---------------------------------------------------------------------------
 @app.post("/api/v1/auth/register")
 def register(x: Register, s: Session = Depends(db)):
     if s.scalar(select(User).where(User.phone == x.phone)):
         raise HTTPException(409, "Telefone já registado.")
     if x.role not in {"buyer", "farmer", "driver"}:
         raise HTTPException(400, "Perfil inválido.")
-    u = User(
-        name=x.name, phone=x.phone, password_hash=pwd.hash(x.password),
-        role=x.role, province=x.province, iban=x.iban, express_phone=x.express_phone
-    )
+    u = User(name=x.name, phone=x.phone, password_hash=pwd.hash(x.password),
+              role=x.role, province=x.province, iban=x.iban, express_phone=x.express_phone)
     s.add(u); s.commit(); s.refresh(u)
     return {"access_token": token_for(u), "user": {"id": u.id, "name": u.name, "role": u.role}}
 
@@ -308,7 +288,7 @@ def list_drivers(province: Optional[str] = None, s: Session = Depends(db)):
 
 
 # ---------------------------------------------------------------------------
-# Veículos
+# Vehicles
 # ---------------------------------------------------------------------------
 @app.post("/api/v1/vehicles")
 def register_vehicle(x: VehicleIn, u: User = Depends(current_user), s: Session = Depends(db)):
@@ -323,7 +303,7 @@ def register_vehicle(x: VehicleIn, u: User = Depends(current_user), s: Session =
 
 
 # ---------------------------------------------------------------------------
-# Produtos
+# Products
 # ---------------------------------------------------------------------------
 @app.get("/api/v1/products")
 def products(province: Optional[str] = None, category: Optional[str] = None,
@@ -348,7 +328,7 @@ def create_product(x: ProductIn, u: User = Depends(current_user), s: Session = D
 
 
 # ---------------------------------------------------------------------------
-# Pedidos e Entregas
+# Orders + Delivery assignment
 # ---------------------------------------------------------------------------
 @app.post("/api/v1/orders")
 def create_order(x: OrderIn, u: User = Depends(current_user), s: Session = Depends(db)):
@@ -390,10 +370,11 @@ def orders(u: User = Depends(current_user), s: Session = Depends(db)):
 
 
 # ---------------------------------------------------------------------------
-# Localização em Tempo Real (WebSocket)
+# Real-time location (WebSocket)
 # ---------------------------------------------------------------------------
 class LocationHub:
-    def _init_(self):
+    """Mantém as ligações WebSocket que acompanham cada pedido (order_id)."""
+    def __init__(self):
         self.rooms: Dict[int, List[WebSocket]] = {}
 
     async def connect(self, order_id: int, ws: WebSocket):
@@ -417,6 +398,12 @@ location_hub = LocationHub()
 
 @app.websocket("/ws/location/{order_id}")
 async def ws_location(websocket: WebSocket, order_id: int, token: str):
+    """
+    O transportador liga-se a este socket e envia:
+        {"latitude": -8.83, "longitude": 13.23, "speed_kmh": 42}
+    Todos os outros ligados ao mesmo pedido (comprador, agricultor) recebem
+    a posição em tempo real. As posições também ficam gravadas na BD.
+    """
     s = SessionLocal()
     user = user_from_token(token, s)
     order = s.get(Order, order_id)
@@ -462,10 +449,10 @@ def last_location(order_id: int, u: User = Depends(current_user), s: Session = D
 
 
 # ---------------------------------------------------------------------------
-# Chat
+# Chat (negociação de preços)
 # ---------------------------------------------------------------------------
 class ChatHub:
-    def _init_(self):
+    def __init__(self):
         self.rooms: Dict[int, List[WebSocket]] = {}
 
     async def connect(self, conv_id: int, ws: WebSocket):
@@ -544,7 +531,7 @@ async def ws_chat(websocket: WebSocket, conversation_id: int, token: str):
 
 
 # ---------------------------------------------------------------------------
-# Pagamentos e Comissão
+# Payments (Multicaixa Express / IBAN) + Comissão da plataforma
 # ---------------------------------------------------------------------------
 @app.post("/api/v1/payments")
 def create_payment(x: PaymentIn, u: User = Depends(current_user), s: Session = Depends(db)):
@@ -587,6 +574,7 @@ def create_payment(x: PaymentIn, u: User = Depends(current_user), s: Session = D
 
 @app.post("/api/v1/payments/{payment_id}/confirm")
 def confirm_payment(payment_id: int, u: User = Depends(current_user), s: Session = Depends(db)):
+    """Simula a confirmação vinda do gateway (webhook em produção)."""
     if u.role != "admin":
         raise HTTPException(403, "Apenas o administrador pode confirmar pagamentos manualmente.")
     payment = s.get(Payment, payment_id)
@@ -598,7 +586,7 @@ def confirm_payment(payment_id: int, u: User = Depends(current_user), s: Session
 
 
 # ---------------------------------------------------------------------------
-# Administração
+# Admin
 # ---------------------------------------------------------------------------
 @app.get("/api/v1/admin/summary")
 def admin_summary(u: User = Depends(current_user), s: Session = Depends(db)):
@@ -613,3 +601,4 @@ def admin_summary(u: User = Depends(current_user), s: Session = Depends(db)):
         "commission_earned": round(sum(p.commission_amount for p in payments if p.status == "pago"), 2),
         "pending_payments": len([p for p in payments if p.status == "pendente"]),
     }
+#Meu Token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxIiwicm9sZSI6ImJ1eWVyIiwiZXhwIjoxNzg5Nzk5NzcwfQ.zpB9uTCkv4TGqElYOF9y_1HPQO3S5IroFlM8v4qOhBs
