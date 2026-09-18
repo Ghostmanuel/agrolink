@@ -625,4 +625,8 @@ def admin_summary(u: User = Depends(current_user), s: Session = Depends(db)):
         "commission_earned": round(sum(p.commission_amount for p in payments if p.status == "pago"), 2),
         "pending_payments": len([p for p in payments if p.status == "pendente"]),
     }
+if __name__ == "__main__":
+    import uvicorn
+    port = int(os.getenv("PORT", 8000))
+    uvicorn.run("app:app", host="0.0.0.0", port=port)
 #Meu Token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxIiwicm9sZSI6ImJ1eWVyIiwiZXhwIjoxNzg5Nzk5NzcwfQ.zpB9uTCkv4TGqElYOF9y_1HPQO3S5IroFlM8v4qOhBs
