@@ -18,6 +18,8 @@ from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, sessionmaker,
 # ---------------------------------------------------------------------------
 # Configuração de Ambiente e Base de Dados
 # ---------------------------------------------------------------------------
+# Configuração de Ambiente e Base de Dados
+# ---------------------------------------------------------------------------
 DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./agrolink.db")
 SECRET_KEY = os.getenv("SECRET_KEY", "CHANGE_THIS_SECRET")
 ALGORITHM = "HS256"
@@ -30,6 +32,7 @@ engine = create_engine(DATABASE_URL, connect_args=connect_args)
 SessionLocal = sessionmaker(bind=engine)
 
 
+# Definição correta da classe base no SQLAlchemy 2.0
 class Base(DeclarativeBase):
     pass
 
@@ -39,6 +42,7 @@ class Base(DeclarativeBase):
 # ---------------------------------------------------------------------------
 class User(Base):
     _tablename_ = "users"
+
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     name: Mapped[str] = mapped_column(String(120))
     phone: Mapped[str] = mapped_column(String(30), unique=True, index=True)
@@ -52,6 +56,7 @@ class User(Base):
 
 class Vehicle(Base):
     _tablename_ = "vehicles"
+
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     driver_id: Mapped[int] = mapped_column(ForeignKey("users.id"), unique=True)
     plate: Mapped[str] = mapped_column(String(20))
@@ -62,6 +67,7 @@ class Vehicle(Base):
 
 class Product(Base):
     _tablename_ = "products"
+
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     producer_id: Mapped[int] = mapped_column(ForeignKey("users.id"))
     name: Mapped[str] = mapped_column(String(120), index=True)
@@ -76,18 +82,20 @@ class Product(Base):
 
 class Order(Base):
     _tablename_ = "orders"
+
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     product_id: Mapped[int] = mapped_column(ForeignKey("products.id"))
     buyer_id: Mapped[int] = mapped_column(ForeignKey("users.id"))
     driver_id: Mapped[Optional[int]] = mapped_column(ForeignKey("users.id"), nullable=True)
     quantity: Mapped[float] = mapped_column(Float)
     total: Mapped[float] = mapped_column(Float)
-    status: Mapped[str] = mapped_column(String(40), default="pending")  # pending | confirmed | a_caminho | entregue | cancelado
+    status: Mapped[str] = mapped_column(String(40), default="pending")
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
 
 
 class LocationPing(Base):
     _tablename_ = "location_pings"
+
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     order_id: Mapped[int] = mapped_column(ForeignKey("orders.id"), index=True)
     driver_id: Mapped[int] = mapped_column(ForeignKey("users.id"))
@@ -99,6 +107,7 @@ class LocationPing(Base):
 
 class Conversation(Base):
     _tablename_ = "conversations"
+
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     buyer_id: Mapped[int] = mapped_column(ForeignKey("users.id"))
     seller_id: Mapped[int] = mapped_column(ForeignKey("users.id"))
@@ -108,6 +117,7 @@ class Conversation(Base):
 
 class ChatMessage(Base):
     _tablename_ = "chat_messages"
+
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     conversation_id: Mapped[int] = mapped_column(ForeignKey("conversations.id"), index=True)
     sender_id: Mapped[int] = mapped_column(ForeignKey("users.id"))
@@ -118,15 +128,19 @@ class ChatMessage(Base):
 
 class Payment(Base):
     _tablename_ = "payments"
+
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     order_id: Mapped[int] = mapped_column(ForeignKey("orders.id"), unique=True)
-    method: Mapped[str] = mapped_column(String(30))  # multicaixa_express | iban
+    method: Mapped[str] = mapped_column(String(30))
     reference: Mapped[str] = mapped_column(String(80))
     amount: Mapped[float] = mapped_column(Float)
     commission_amount: Mapped[float] = mapped_column(Float)
     net_to_seller: Mapped[float] = mapped_column(Float)
-    status: Mapped[str] = mapped_column(String(30), default="pendente")  # pendente | pago | falhou
+    status: Mapped[str] = mapped_column(String(30), default="pendente")
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+
+
+Base.metadata.create_all(engine)
 
 
 Base.metadata.create_all(engine)
