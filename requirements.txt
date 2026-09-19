@@ -4,3 +4,4 @@ pydantic>=2.8
 PyJWT>=2.9
 passlib>=1.7.4
 python-dotenv>=1.0
+python-jose[cryptography]
