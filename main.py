@@ -2,9 +2,9 @@ from fastapi import FastAPI,HTTPException,Depends,Header,WebSocket,WebSocketDisc
 from fastapi.responses import HTMLResponse
 from fastapi.middleware.cors import CORSMiddleware
 from db import init_db,get_db
-from .schemas import *
-from .security import *
-from .config import *
+from schemas import *
+from security import *
+from config import *
 import hashlib,json,secrets
 app=FastAPI(title='AgroLink Angola v11',version='11.0.0');TOKENS={}
 app.add_middleware(CORSMiddleware,allow_origins=['*'],allow_credentials=True,allow_methods=['*'],allow_headers=['*'])
