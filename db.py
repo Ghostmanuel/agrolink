@@ -1,6 +1,6 @@
 import sqlite3
 from pathlib import Path
-from .config import DATABASE_URL
+from config import DATABASE_URL
 
 def get_db():
     if not DATABASE_URL.startswith('sqlite:///'):
