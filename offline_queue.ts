@@ -1,2 +1,0 @@
-export type OfflineEvent={id:string;deviceId:string;eventType:string;payload:Record<string,unknown>;createdAt:string;attempts:number;status:"PENDING"|"SYNCING"|"FAILED"};
-export class OfflineQueue{private queue:OfflineEvent[]=[];add(e:OfflineEvent){this.queue.push(e)}pending(){return this.queue.filter(x=>x.status!=="SYNCING")}markSyncing(id:string){const e=this.queue.find(x=>x.id===id);if(e)e.status="SYNCING"}markSynced(id:string){this.queue=this.queue.filter(x=>x.id!==id)}markFailed(id:string){const e=this.queue.find(x=>x.id===id);if(e){e.status="FAILED";e.attempts++}}}
