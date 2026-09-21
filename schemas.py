@@ -46,7 +46,9 @@ class Product(BaseModel):
 class Order(BaseModel):
     product_id:int; quantity:float=Field(gt=0); delivery_address:str=Field(min_length=3,max_length=240)
 class Review(BaseModel): accepted:bool; note:Optional[str]=None
-class TransportChoice(BaseModel): mode:Literal["buyer","seller","agrolink"]
+class TransportChoice(BaseModel):
+    mode:Literal["buyer","seller","agrolink"]
+    seller_delivery_fee_kz:Optional[float]=Field(default=None,ge=0)
 class DeliveryQuote(BaseModel):
     cargo_kg:Optional[float]=Field(default=None,ge=0)
     vehicle_capacity_kg:Optional[float]=Field(default=None,gt=0)

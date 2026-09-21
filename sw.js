@@ -1,4 +1,4 @@
-const CACHE = "epyalink-v1";
+const CACHE = "epyalink-v1-2";
 const SHELL = ["/", "/index.html", "/manifest.json", "/icon-192.png", "/icon-512.png", "/LogoEpyalink.png"];
 
 self.addEventListener("install", event => {

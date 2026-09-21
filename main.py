@@ -253,20 +253,69 @@ def get_private_file(file_id:str,u=Depends(auth)):
     if not path.exists(): raise HTTPException(404,"Ficheiro não disponível")
     return FileResponse(path,media_type=f["content_type"],filename=f["filename"],headers={"Cache-Control":"private, no-store"})
 
+def _kamba_phone(phone):
+    return "+244" + normalize_phone(phone)
+
+def _kamba_request(path, payload, api_key=None, timeout=10):
+    headers={"Content-Type":"application/json"}
+    if api_key:
+        headers["X-API-Key"]=api_key
+    req=urllib.request.Request(f"{KAMBASMS_BASE_URL}{path}",data=json.dumps(payload).encode(),headers=headers,method="POST")
+    try:
+        with urllib.request.urlopen(req,timeout=timeout) as resp:
+            return json.loads(resp.read().decode() or "{}")
+    except Exception as exc:
+        raise HTTPException(503,"Não foi possível contactar o serviço de SMS. Tente novamente mais tarde.") from exc
+
+def _send_password_otp(phone, code=None):
+    provider=(PASSWORD_RESET_SMS_PROVIDER or "").lower()
+    if provider=="kambasms" and KAMBASMS_API_KEY:
+        result=_kamba_request("/otp/send", {"phone":_kamba_phone(phone)}, KAMBASMS_API_KEY)
+        if not result.get("success"):
+            raise HTTPException(503,"Não foi possível enviar o código por SMS. Tente novamente.")
+        return "kambasms", int(result.get("expires_in") or PASSWORD_RESET_TTL_MINUTES*60)
+    if PASSWORD_RESET_DEMO:
+        return "local", PASSWORD_RESET_TTL_MINUTES*60
+    raise HTTPException(503,"Recuperação por SMS ainda não está configurada no servidor.")
+
+def _verify_password_otp(provider, phone, code, token_hash):
+    if provider=="kambasms":
+        # A KambaSMS /otp/verify é público segundo a documentação oficial;
+        # não enviamos a API key do servidor nesta chamada.
+        result=_kamba_request("/otp/verify", {"phone":_kamba_phone(phone),"code":code})
+        return bool(result.get("success"))
+    return hmac.compare_digest(token_hash,reset_token_hash(code))
+
 @app.post("/api/auth/forgot-password")
 def forgot_password(x:ForgotPassword, request:Request):
     verify_turnstile(x.turnstile_token, request)
     phone=normalize_phone(x.phone); db=get_db(); u=db.execute("SELECT id FROM users WHERE phone=? AND status='active'",(phone,)).fetchone()
-    # Always return the same public message to avoid account enumeration.
-    message="Se o número estiver registado, um código de recuperação foi gerado."
+    message="Se o número estiver registado, um código de recuperação foi enviado."
     if not u:
-        db.close(); return {"ok":True,"message":message.strip()}
-    code=reset_code(); expires=(datetime.now(timezone.utc)+timedelta(minutes=PASSWORD_RESET_TTL_MINUTES)).isoformat()
+        db.close(); return {"ok":True,"message":message}
+    # Local anti-abuse: max N successful/reset-code requests per hour and one every 60s.
+    recent=db.execute("SELECT COUNT(*) c FROM password_reset_tokens WHERE user_id=? AND created_at>=datetime('now','-1 hour')",(u["id"],)).fetchone()["c"]
+    last=db.execute("SELECT created_at FROM password_reset_tokens WHERE user_id=? ORDER BY id DESC LIMIT 1",(u["id"],)).fetchone()
+    if recent>=PASSWORD_RESET_RATE_LIMIT_PER_HOUR:
+        db.close(); raise HTTPException(429,"Foram solicitados demasiados códigos. Tente novamente mais tarde.")
+    if last:
+        try:
+            last_dt=datetime.fromisoformat(last["created_at"].replace("Z","+00:00")).replace(tzinfo=timezone.utc) if "+" not in last["created_at"] else datetime.fromisoformat(last["created_at"])
+            if (datetime.now(timezone.utc)-last_dt).total_seconds()<60:
+                db.close(); raise HTTPException(429,"Aguarde um minuto antes de solicitar outro código.")
+        except HTTPException: raise
+        except Exception: pass
+    provider, ttl=_send_password_otp(phone)
+    # KambaSMS informa a validade real no response (normalmente 300s).
+    # Nunca deixamos o token local viver mais tempo do que o OTP do provedor.
+    ttl=max(60, min(int(ttl), PASSWORD_RESET_TTL_MINUTES*60))
+    code=reset_code() if provider=="local" else "KAMBA_PROVIDER"
+    expires=(datetime.now(timezone.utc)+timedelta(seconds=ttl)).isoformat()
     db.execute("UPDATE password_reset_tokens SET used_at=CURRENT_TIMESTAMP WHERE user_id=? AND used_at IS NULL",(u["id"],))
-    db.execute("INSERT INTO password_reset_tokens(user_id,token_hash,expires_at,attempts) VALUES(?,?,?,0)",(u["id"],reset_token_hash(code),expires))
+    db.execute("INSERT INTO password_reset_tokens(user_id,token_hash,expires_at,attempts,provider) VALUES(?,?,?,?,?)",(u["id"],reset_token_hash(code),expires,0,provider))
     db.commit(); db.close()
-    out={"ok":True,"message":message.strip()}
-    if PASSWORD_RESET_DEMO: out["demo_code"]=code
+    out={"ok":True,"message":message}
+    if provider=="local" and PASSWORD_RESET_DEMO: out["demo_code"]=code
     return out
 
 @app.post("/api/auth/reset-password")
@@ -281,10 +330,13 @@ def reset_password(x:ResetPassword, request:Request):
     except Exception: expired=True
     if expired:
         db.close(); raise HTTPException(400,"Código expirado. Solicite um novo código.")
-    if not hmac.compare_digest(token["token_hash"],reset_token_hash(x.code)):
+    if not _verify_password_otp(token["provider"] if "provider" in token.keys() else "local", phone, x.code, token["token_hash"]):
         db.execute("UPDATE password_reset_tokens SET attempts=attempts+1 WHERE id=?",(token["id"],)); db.commit(); db.close(); raise HTTPException(400,"Código inválido")
     db.execute("UPDATE users SET password_hash=? WHERE id=?",(hash_password(x.new_password),u["id"]))
-    db.execute("UPDATE password_reset_tokens SET used_at=CURRENT_TIMESTAMP WHERE id=?",(token["id"],)); db.commit(); db.close()
+    db.execute("UPDATE password_reset_tokens SET used_at=CURRENT_TIMESTAMP WHERE id=?",(token["id"],))
+    db.execute("UPDATE password_reset_tokens SET used_at=CURRENT_TIMESTAMP WHERE user_id=? AND used_at IS NULL AND id<>?",(u["id"],token["id"]))
+    audit(db,u["id"],"PASSWORD_RESET","users",u["id"])
+    db.commit(); db.close()
     return {"ok":True,"message":"Palavra-passe alterada com sucesso."}
 
 @app.get("/api/me")
@@ -386,7 +438,12 @@ def transport_choice(oid:int,x:TransportChoice,u=Depends(auth)):
     elif x.mode=="buyer":
         db.execute("UPDATE orders SET transport_mode='buyer',delivery_status='NOT_REQUIRED',delivery_distance_km=0,delivery_fee_kz=0,total_kz=product_total_kz WHERE id=?",(oid,)); db.execute("DELETE FROM deliveries WHERE order_id=?",(oid,))
     else:
-        db.execute("UPDATE orders SET transport_mode='seller',delivery_status='SELLER_DELIVERY',delivery_distance_km=0,delivery_fee_kz=0,total_kz=product_total_kz WHERE id=?",(oid,)); db.execute("DELETE FROM deliveries WHERE order_id=?",(oid,))
+        # Seller delivery: the seller defines the fee; EPYALINK only records/displays it.
+        if x.seller_delivery_fee_kz is None:
+            db.close(); raise HTTPException(422,"Informe o preço de entrega definido pelo vendedor")
+        fee=round(float(x.seller_delivery_fee_kz),2)
+        total=round(o["product_total_kz"]+fee,2)
+        db.execute("UPDATE orders SET transport_mode='seller',delivery_status='SELLER_DELIVERY',delivery_distance_km=0,delivery_fee_kz=?,total_kz=? WHERE id=?",(fee,total,oid)); db.execute("DELETE FROM deliveries WHERE order_id=?",(oid,))
     db.commit(); db.close(); return {"mode":x.mode}
 
 @app.post("/api/orders/{oid}/delivery-quote")
@@ -458,7 +515,7 @@ def assign_transporter(oid:int,x:AssignTransporter,u=Depends(auth)):
     else: did=db.execute("INSERT INTO deliveries(order_id,transporter_id,vehicle_id,origin,destination,status) VALUES(?,?,?,?,?,?)",(oid,x.transporter_id,v["id"],x.origin,o["delivery_address"],"REQUESTED")).lastrowid
     db.execute("UPDATE orders SET delivery_status='REQUESTED',delivery_code_hash=? WHERE id=?",(delivery_hash(code),oid)); db.execute("UPDATE vehicles SET status='RESERVED' WHERE id=?",(v["id"],)); notify(db,x.transporter_id,"Nova solicitação de transporte",f"Pedido #{oid}. Aceite ou rejeite no AgroLink."); audit(db,u["id"],"TRANSPORT_REQUESTED","deliveries",did,{"transporter_id":x.transporter_id}); db.commit(); db.close()
     # The delivery code is returned only to the buyer/seller who initiated the assignment; transporter never receives it.
-    return {"delivery_id":did,"status":"REQUESTED","delivery_code_for_buyer":"%s"%code}
+    return {"delivery_id":did,"status":"REQUESTED","message":"Solicitação enviada. O código de confirmação é reservado para a confirmação da entrega pelo comprador."}
 
 @app.post("/api/deliveries/{did}/accept")
 def accept_delivery(did:int,u=Depends(role("transport_company","private_transporter","transporter"))):
