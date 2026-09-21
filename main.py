@@ -118,14 +118,31 @@ def haversine_km(a_lat,a_lon,b_lat,b_lon):
 def storage_root():
     root=Path(FILE_STORAGE_DIR); root.mkdir(parents=True,exist_ok=True); return root
 
-def store_private_file(raw,filename,content_type,owner_id,purpose,entity_id=None):
+def _validate_private_file(raw,filename,content_type):
     if len(raw)>MAX_UPLOAD_BYTES: raise HTTPException(413,"Ficheiro demasiado grande")
     allowed={"image/jpeg","image/png","image/webp","application/pdf"}
     if content_type not in allowed: raise HTTPException(415,"Tipo de ficheiro não permitido")
+
+def store_private_file_db(db,raw,filename,content_type,owner_id,purpose,entity_id=None):
+    """Grava o ficheiro usando a mesma ligação/transação já aberta pelo pedido."""
+    _validate_private_file(raw,filename,content_type)
     ext=Path(filename).suffix.lower() or mimetypes.guess_extension(content_type) or ""
-    fid=uuid.uuid4().hex; key=fid+ext; (storage_root()/key).write_bytes(raw)
-    db=get_db(); db.execute("INSERT INTO stored_files(id,owner_id,entity_type,entity_id,filename,content_type,size_bytes,storage_key,private) VALUES(?,?,?,?,?,?,?,?,1)",(fid,owner_id,purpose,entity_id,Path(filename).name,content_type,len(raw),key)); db.commit(); db.close()
+    fid=uuid.uuid4().hex; key=fid+ext
+    (storage_root()/key).write_bytes(raw)
+    db.execute("INSERT INTO stored_files(id,owner_id,entity_type,entity_id,filename,content_type,size_bytes,storage_key,private) VALUES(?,?,?,?,?,?,?,?,1)",(fid,owner_id,purpose,entity_id,Path(filename).name,content_type,len(raw),key))
     return fid
+
+def store_private_file(raw,filename,content_type,owner_id,purpose,entity_id=None):
+    db=get_db()
+    try:
+        fid=store_private_file_db(db,raw,filename,content_type,owner_id,purpose,entity_id)
+        db.commit()
+        return fid
+    except Exception:
+        db.rollback()
+        raise
+    finally:
+        db.close()
 
 def calc_fee(distance): return round(BASE_DELIVERY_FEE + max(0,float(distance))*DELIVERY_RATE_PER_KM,2)
 
@@ -184,13 +201,20 @@ def register(x:Register, request:Request):
             db.execute("UPDATE users SET profile_photo=? WHERE id=?",(f"/api/files/{x.profile_photo_file_id}",uid))
             db.execute("UPDATE stored_files SET entity_type='profile',entity_id=? WHERE id=?",(uid,x.profile_photo_file_id))
         elif x.profile_photo_data_base64:
-            try: raw=base64.b64decode(x.profile_photo_data_base64,validate=True)
-            except Exception: raise HTTPException(400,"Fotografia de perfil inválida")
-            if not x.profile_photo_content_type or not x.profile_photo_content_type.startswith("image/"): raise HTTPException(415,"A fotografia deve ser uma imagem")
-            fid=store_private_file(raw,x.profile_photo_filename or "perfil.jpg",x.profile_photo_content_type,uid,"profile",uid)
+            try:
+                raw=base64.b64decode(x.profile_photo_data_base64,validate=True)
+            except Exception:
+                raise HTTPException(400,"Fotografia de perfil inválida")
+            if not x.profile_photo_content_type or not x.profile_photo_content_type.startswith("image/"):
+                raise HTTPException(415,"A fotografia deve ser uma imagem")
+            # Importante: usar a mesma ligação SQLite do cadastro.
+            # Isto evita o erro de bloqueio que acontecia quando a fotografia
+            # abria uma segunda ligação enquanto o INSERT do utilizador estava em transação.
+            fid=store_private_file_db(db,raw,x.profile_photo_filename or "perfil.jpg",x.profile_photo_content_type,uid,"profile",uid)
             db.execute("UPDATE users SET profile_photo=? WHERE id=?",(f"/api/files/{fid}",uid))
-            db.execute("UPDATE stored_files SET entity_type='profile',entity_id=? WHERE id=?",(uid,fid))
         audit(db,uid,"USER_REGISTERED","users",uid,{"role":x.role}); db.commit()
+    except HTTPException:
+        db.rollback(); db.close(); raise
     except Exception:
         db.rollback(); db.close(); raise HTTPException(500,"Não foi possível concluir o cadastro. Verifique os dados e tente novamente.")
     db.close(); return {"ok":True,"user_id":uid}
