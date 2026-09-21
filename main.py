@@ -24,7 +24,7 @@ def verify_turnstile(token, request:Request):
         raise HTTPException(503, "Verificação anti-robô não configurada no servidor")
     if not token:
         raise HTTPException(400, "Confirme a verificação anti-robô")
-    data=json.dumps({"secret":TURNSTILE_SECRET_KEY,"response":token,"remoteip":_client_ip(request),"idempotency_key":str(uuid.uuid4())}).encode()
+    data=json.dumps({"secret":TURNSTILE_SECRET_KEY,"response":token,"remoteip":_client_ip(request),"idempotency_key":secrets.token_hex(16)}).encode()
     req=urllib.request.Request("https://challenges.cloudflare.com/turnstile/v0/siteverify",data=data,headers={"Content-Type":"application/json"},method="POST")
     try:
         with urllib.request.urlopen(req,timeout=8) as resp:
@@ -32,7 +32,6 @@ def verify_turnstile(token, request:Request):
     except Exception:
         raise HTTPException(503,"Não foi possível validar a verificação anti-robô. Tente novamente.")
     if not result.get("success"):
-        print("Turnstile Siteverify failure:", result.get("error-codes", []), "hostname=", result.get("hostname"))
         raise HTTPException(400,"Verificação anti-robô inválida ou expirada. Tente novamente.")
     return True
 
@@ -119,13 +118,27 @@ def haversine_km(a_lat,a_lon,b_lat,b_lon):
 def storage_root():
     root=Path(FILE_STORAGE_DIR); root.mkdir(parents=True,exist_ok=True); return root
 
-def store_private_file(raw,filename,content_type,owner_id,purpose,entity_id=None):
+def store_private_file(raw,filename,content_type,owner_id,purpose,entity_id=None,db=None):
     if len(raw)>MAX_UPLOAD_BYTES: raise HTTPException(413,"Ficheiro demasiado grande")
     allowed={"image/jpeg","image/png","image/webp","application/pdf"}
     if content_type not in allowed: raise HTTPException(415,"Tipo de ficheiro não permitido")
     ext=Path(filename).suffix.lower() or mimetypes.guess_extension(content_type) or ""
-    fid=uuid.uuid4().hex; key=fid+ext; (storage_root()/key).write_bytes(raw)
-    db=get_db(); db.execute("INSERT INTO stored_files(id,owner_id,entity_type,entity_id,filename,content_type,size_bytes,storage_key,private) VALUES(?,?,?,?,?,?,?,?,1)",(fid,owner_id,purpose,entity_id,Path(filename).name,content_type,len(raw),key)); db.commit(); db.close()
+    fid=uuid.uuid4().hex; key=fid+ext
+    path=storage_root()/key
+    path.write_bytes(raw)
+    own_db = db is None
+    conn = db or get_db()
+    try:
+        conn.execute("INSERT INTO stored_files(id,owner_id,entity_type,entity_id,filename,content_type,size_bytes,storage_key,private) VALUES(?,?,?,?,?,?,?,?,1)",(fid,owner_id,purpose,entity_id,Path(filename).name,content_type,len(raw),key))
+        if own_db: conn.commit()
+    except Exception:
+        if own_db:
+            conn.rollback(); conn.close()
+        try: path.unlink(missing_ok=True)
+        except Exception: pass
+        raise
+    finally:
+        if own_db: conn.close()
     return fid
 
 def calc_fee(distance): return round(BASE_DELIVERY_FEE + max(0,float(distance))*DELIVERY_RATE_PER_KM,2)
@@ -176,12 +189,14 @@ def register(x:Register, request:Request):
             try: raw=base64.b64decode(x.profile_photo_data_base64,validate=True)
             except Exception: raise HTTPException(400,"Fotografia de perfil inválida")
             if not x.profile_photo_content_type or not x.profile_photo_content_type.startswith("image/"): raise HTTPException(415,"A fotografia deve ser uma imagem")
-            fid=store_private_file(raw,x.profile_photo_filename or "perfil.jpg",x.profile_photo_content_type,uid,"profile",uid)
+            fid=store_private_file(raw,x.profile_photo_filename or "perfil.jpg",x.profile_photo_content_type,uid,"profile",uid,db=db)
             db.execute("UPDATE users SET profile_photo=? WHERE id=?",(f"/api/files/{fid}",uid))
             db.execute("UPDATE stored_files SET entity_type='profile',entity_id=? WHERE id=?",(uid,fid))
         audit(db,uid,"USER_REGISTERED","users",uid,{"role":x.role}); db.commit()
-    except Exception:
-        db.rollback(); db.close(); raise HTTPException(500,"Não foi possível concluir o cadastro. Verifique os dados e tente novamente.")
+    except HTTPException:
+        db.rollback(); db.close(); raise
+    except Exception as exc:
+        db.rollback(); db.close(); raise HTTPException(500,"Não foi possível concluir o cadastro. Verifique os dados e tente novamente.") from exc
     db.close(); return {"ok":True,"user_id":uid}
 
 @app.post("/api/auth/login")
