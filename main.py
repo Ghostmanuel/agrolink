@@ -10,7 +10,7 @@ from schemas import *
 from security import *
 from config import *
 
-app=FastAPI(title=APP_NAME,version="16.2.0")
+app=FastAPI(title=APP_NAME,version="16.2.1")
 TOKENS={}
 app.add_middleware(CORSMiddleware,allow_origins=["*"],allow_credentials=True,allow_methods=["*"],allow_headers=["*"])
 
