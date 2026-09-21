@@ -14,10 +14,3 @@ Base: v16.2.0 recuperada do commit `cd8212c`.
 
 ## Regra de deploy
 Esta versão deve ser publicada como um único commit, mantendo a branch `recuperar-16-2-0` como ponto seguro até a validação final.
-
-
-## v16.2.1 — limpeza final de frontend
-- Removidas declarações duplicadas de `loadChat`, `sendChat` e `sellerPanel` do `index.html`.
-- Mantida a implementação mais recente de cada função, incluindo identidade no chat e fotografia de produto.
-- Verificação de sintaxe JavaScript concluída com sucesso.
-- Nenhuma alteração destrutiva no banco de dados.
