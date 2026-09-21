@@ -1,5 +1,5 @@
-const CACHE = "agrolink-v16-2-1";
-const SHELL = ["/", "/index.html", "/manifest.json", "/icon-192.png", "/icon-512.png", "/LogoAgrolink.jpeg"];
+const CACHE = "epyalink-v1";
+const SHELL = ["/", "/index.html", "/manifest.json", "/icon-192.png", "/icon-512.png", "/LogoEpyalink.png"];
 
 self.addEventListener("install", event => {
   event.waitUntil(caches.open(CACHE).then(c => c.addAll(SHELL)).catch(() => {}));
