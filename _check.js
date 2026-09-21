@@ -1,79 +1,5 @@
-<!doctype html>
-<html lang="pt-AO">
-<head>
-<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>AgroLink Angola</title>
-<script src="https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit" defer></script>
-<link rel="manifest" href="/manifest.json"><meta name="theme-color" content="#2F6B3A"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="default"><link rel="apple-touch-icon" href="/icon-192.png">
-<style>
-:root{--g:#2f6b3a;--gd:#1e4a28;--o:#c9752f;--bg:#f7f8f3;--card:#fff;--txt:#16231a;--muted:#667267;--line:#dde4d8;--danger:#b4432e}*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--txt);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}#app{max-width:520px;margin:auto;min-height:100vh;background:var(--bg)}header{position:sticky;top:0;z-index:10;background:rgba(255,255,255,.96);backdrop-filter:blur(12px);border-bottom:1px solid var(--line);padding:10px 14px}.brand{display:flex;align-items:center;gap:10px}.brand img{width:48px;height:48px;object-fit:contain;border-radius:12px}.brand b{font-size:18px}.brand small{display:block;color:var(--g)}main{padding:14px 14px 100px}.screen{display:none}.screen.active{display:block}.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:14px;margin-bottom:12px;box-shadow:0 2px 10px #1930180d}.row{display:flex;gap:8px;align-items:center}.between{justify-content:space-between}.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}.field{margin:9px 0}.field label{font-size:12px;color:var(--muted);display:block;margin-bottom:5px}.field input,.field select,.field textarea{width:100%;padding:11px;border:1px solid var(--line);border-radius:10px;background:#fff;font:inherit}.field textarea{min-height:80px}.btn{border:0;border-radius:11px;padding:11px 13px;background:var(--g);color:white;font-weight:700;cursor:pointer}.btn.secondary{background:white;color:var(--g);border:1px solid var(--g)}.btn.orange{background:var(--o)}.btn.danger{background:var(--danger)}.btn.full{width:100%}.muted{color:var(--muted);font-size:13px}.price{font-weight:800;color:var(--gd);font-size:18px}.tag{display:inline-block;background:#edf4e9;color:var(--gd);border-radius:999px;padding:4px 8px;font-size:11px;margin:2px}.search{display:flex;gap:8px}.search input{flex:1;padding:12px;border:1px solid var(--line);border-radius:12px}.tabs{display:flex;gap:7px;overflow:auto;margin-bottom:12px}.tabs button{white-space:nowrap;border:1px solid var(--line);background:white;border-radius:999px;padding:8px 11px}.tabs button.active{background:var(--g);color:white}.bottom{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:min(520px,100%);display:flex;background:white;border-top:1px solid var(--line);padding:8px 4px calc(8px + env(safe-area-inset-bottom));z-index:20}.bottom button{flex:1;border:0;background:none;color:var(--muted);font-size:11px}.bottom button b{display:block;font-size:19px}.bottom button.active{color:var(--g)}.hidden{display:none!important}.notice{padding:10px;border-radius:10px;background:#fff4dc;margin:10px 0;font-size:13px}.ok{background:#eaf6ea}.error{background:#fdecea;color:#8b2415}.product img{width:100%;height:150px;object-fit:cover;border-radius:12px;background:#eef2ea}.auth{padding:22px 16px}.auth .logo{width:150px;height:150px;object-fit:contain;display:block;margin:10px auto}.small{font-size:11px}.stat{font-size:24px;font-weight:800}.modal{position:fixed;inset:0;background:#0008;display:none;z-index:50;align-items:flex-end}.modal.open{display:flex}.sheet{background:white;width:min(520px,100%);border-radius:20px 20px 0 0;padding:18px;max-height:90vh;overflow:auto}.chat{max-height:50vh;overflow:auto}.msg{padding:8px 10px;border-radius:12px;background:#edf2ea;margin:6px 0}.mine{background:#dcefdc;margin-left:28px}.right{margin-left:auto}
 
-/* Login comercial AgroLink */
-.auth{position:relative;min-height:100vh;padding:0;display:flex;align-items:center;justify-content:center;overflow:hidden;background:#173d22 url('/login-bg.jpg') center/cover no-repeat}
-.auth::before{content:"";position:absolute;inset:0;background:linear-gradient(180deg,rgba(10,38,18,.10),rgba(10,38,18,.52))}
-.auth-card{position:relative;z-index:1;width:min(430px,calc(100% - 28px));margin:24px auto;padding:22px 20px 18px;background:rgba(255,255,255,.96);border:1px solid rgba(255,255,255,.75);border-radius:24px;box-shadow:0 18px 55px rgba(0,0,0,.28);backdrop-filter:blur(10px)}
-.auth-logo{width:132px;height:132px;object-fit:contain;display:block;margin:-2px auto 6px;border-radius:18px}
-.auth-title{text-align:center;margin:4px 0 2px;color:var(--gd);font-size:26px}.auth-sub{text-align:center;margin:0 0 16px}
-.auth-tabs{display:none}.auth-switch{text-align:center;margin:14px 0 0;font-size:13px}.auth-switch button{border:0;background:none;color:var(--g);font-weight:800;padding:2px;cursor:pointer}
-.auth-eye{position:relative}.auth-eye input{padding-right:46px}.auth-eye button{position:absolute;right:6px;top:50%;transform:translateY(-50%);border:0;background:transparent;font-size:20px;cursor:pointer;color:var(--muted);padding:7px}
-.auth .btn{min-height:46px}.auth .field input,.auth .field select{background:#fff}.auth-note{text-align:center;font-size:11px;color:var(--muted);margin-top:12px}
-@media(max-width:420px){.auth-card{padding:18px 15px;border-radius:20px}.auth-logo{width:112px;height:112px}.auth-title{font-size:23px}}
-</style></head>
-<body><div id="app">
-<section id="auth" class="screen active auth">
-  <div class="auth-card">
-    <img class="auth-logo" src="/LogoAgrolink.jpeg" alt="Agro-Link Angola">
-    <h1 class="auth-title">Agro-Link Angola</h1>
-    <p class="muted auth-sub">Conectamos produtores, consumidores e transporte agrícola.</p>
 
-    <form id="loginForm">
-      <div class="field"><label>Telefone</label><input id="loginPhone" inputmode="tel" autocomplete="tel" placeholder="900 000 001" required></div>
-      <div class="field auth-eye"><label>Palavra-passe</label><input id="loginPassword" type="password" autocomplete="current-password" required><button type="button" aria-label="Mostrar palavra-passe" onclick="togglePassword('loginPassword',this)">👁</button></div>
-      <div id="loginTurnstile"></div>
-      <button class="btn full" type="submit">Entrar</button>
-      <button type="button" class="btn secondary full" style="margin-top:8px" onclick="openRecovery()">Esqueci a palavra-passe</button>
-      <div class="auth-switch">Ainda não tem conta? <button type="button" onclick="authMode('register')">Criar conta</button></div>
-    </form>
-
-    <form id="registerForm" class="hidden">
-      <div class="field"><label>Nome completo</label><input id="rName" autocomplete="name" required minlength="3"></div>
-      <div class="field"><label>Telefone</label><input id="rPhone" inputmode="tel" autocomplete="tel" required placeholder="900 000 001"></div>
-      <div class="field auth-eye"><label>Palavra-passe (mín. 8)</label><input id="rPass" type="password" autocomplete="new-password" minlength="8" required><button type="button" aria-label="Mostrar palavra-passe" onclick="togglePassword('rPass',this)">👁</button></div>
-      <div class="field"><label>Perfil</label><select id="rRole" onchange="roleFields()"><option value="buyer">Comprador</option><option value="seller">Produtor / Vendedor</option><option value="transport_company">Empresa Transportadora</option><option value="private_transporter">Transportador Particular / Independente</option></select></div>
-      <div class="field"><label>Província</label><input id="rProvince" required></div>
-      <div class="field"><label>Endereço</label><input id="rAddress" required></div>
-      <div id="sellerFields" class="hidden"><div class="field"><label>Empresa / Fazenda</label><input id="rCompany" placeholder="Nome da empresa"></div><div class="field"><label>Fazenda</label><input id="rFarm" placeholder="Nome da fazenda (se aplicável)"></div></div>
-      <div id="companyFields" class="hidden"><div class="field"><label>Nome da empresa transportadora</label><input id="rTransportCompany" placeholder="Ex.: Transportes ABC, Lda."></div></div>
-      <div id="transFields" class="hidden"><div class="field"><label>BI</label><input id="rBI" placeholder="Número do BI"></div></div>
-      <div class="field"><label>Fotografia de perfil</label><input id="rPhoto" type="file" accept="image/*"><div class="muted small">A fotografia identifica a conta e será usada no perfil e no chat.</div></div>
-      <div id="registerTurnstile"></div>
-      <button class="btn full" type="submit">Criar conta</button>
-      <div class="auth-switch">Já tem conta? <button type="button" onclick="authMode('login')">Entrar</button></div>
-    </form>
-
-    <div id="authMsg"></div>
-    <div id="recoveryBox" class="card hidden">
-      <h3>Recuperar palavra-passe</h3><p class="muted">Informe o telefone da conta.</p>
-      <div class="field"><label>Telefone</label><input id="fpPhone" inputmode="tel" placeholder="900 000 001"></div>
-      <div id="recoveryTurnstile"></div>
-      <button class="btn full" onclick="requestRecovery()">Enviar código</button>
-      <div id="recoveryCodeBox" class="hidden"><div class="field"><label>Código recebido</label><input id="fpCode" inputmode="numeric" maxlength="6"></div><div class="field auth-eye"><label>Nova palavra-passe</label><input id="fpNew" type="password" minlength="8"><button type="button" aria-label="Mostrar palavra-passe" onclick="togglePassword('fpNew',this)">👁</button></div><div id="resetTurnstile"></div><button class="btn full" onclick="resetPassword()">Alterar palavra-passe</button></div>
-      <button class="btn secondary full" style="margin-top:8px" onclick="closeRecovery()">Voltar</button>
-    </div>
-    <div class="auth-note">Plataforma Agro-Link Angola</div>
-  </div>
-</section>
-<header id="top" class="hidden"><div class="brand"><img src="/LogoAgrolink.jpeg"><div><b>AgroLink Angola</b><small>Mercado agrícola</small></div><button id="scopeDots" class="btn secondary right" aria-label="Mais opções">⋮</button></div></header>
-<main id="main" class="hidden">
-<section id="market" class="screen active"><div class="row between"><div><h2>Mercado</h2><div class="muted">Encontre produtos de produtores em Angola.</div></div><button class="btn orange" onclick="aiInsights()">IA</button></div><div class="search"><input id="search" placeholder="Pesquisar produto, produtor ou local"><button class="btn" onclick="loadProducts()">Pesquisar</button></div><div id="cats" class="tabs"></div><div id="products"></div></section>
-<section id="orders" class="screen"><h2>Pedidos</h2><div id="ordersList"></div></section>
-<section id="transport" class="screen"><div class="row between"><div><h2>Transporte</h2><div class="muted">Veículos disponíveis e entregas.</div></div><button class="btn secondary" onclick="loadTransporters()">Atualizar</button></div><div id="transportContent"></div></section>
-<section id="chatScreen" class="screen"><h2>Chat</h2><div class="field"><label>ID do pedido</label><input id="chatOrderId" type="number"></div><button class="btn" onclick="loadChat()">Abrir conversa</button><div id="chatBox" class="chat"></div><div id="chatSend" class="hidden"><div class="field"><label>Fotografia no chat (opcional)</label><input id="chatPhoto" type="file" accept="image/*"></div><div class="row"><input id="chatText" style="flex:1;padding:11px;border:1px solid var(--line);border-radius:10px"><button class="btn" onclick="sendChat()">Enviar</button></div></div></section>
-<section id="profile" class="screen"><h2>Perfil</h2><div id="accountMenu"></div><div id="profileBox"></div><div id="sellerPanel" class="hidden"></div><div id="vehiclePanel" class="hidden"></div><div id="adminPanel" class="hidden"></div></section>
-</main><nav id="nav" class="bottom hidden"><button onclick="show('market')"><b>⌂</b>Mercado</button><button onclick="show('orders')"><b>▣</b>Pedidos</button><button onclick="show('transport')"><b>🚚</b>Transporte</button><button onclick="show('chatScreen')"><b>💬</b>Chat</button><button onclick="show('profile')"><b>◉</b>Perfil</button></nav>
-<div id="modal" class="modal"><div class="sheet"><div class="row between"><h3 id="modalTitle">AgroLink</h3><button class="btn secondary" onclick="closeModal()">Fechar</button></div><div id="modalBody"></div></div></div>
-</div>
-<script>
 const S={token:localStorage.getItem('agrolink_token')||'',role:localStorage.getItem('agrolink_role')||'',name:localStorage.getItem('agrolink_name')||'',cat:null};
 const $=id=>document.getElementById(id); const esc=s=>String(s??'').replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]));
 async function api(path,opts={}){opts.headers={...(opts.headers||{}), 'Content-Type':'application/json'};if(S.token)opts.headers.Authorization='Bearer '+S.token;const r=await fetch(path,opts);let d={};try{d=await r.json()}catch{}if(!r.ok)throw Error(d.detail||d.message||`Erro ${r.status}`);return d}
@@ -293,4 +219,3 @@ if($('accountMenu')) accountMenu();
 
 })();
 
-</script></body></html>

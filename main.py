@@ -24,7 +24,7 @@ def verify_turnstile(token, request:Request):
         raise HTTPException(503, "Verificação anti-robô não configurada no servidor")
     if not token:
         raise HTTPException(400, "Confirme a verificação anti-robô")
-    data=json.dumps({"secret":TURNSTILE_SECRET_KEY,"response":token,"remoteip":_client_ip(request),"idempotency_key":secrets.token_hex(16)}).encode()
+    data=json.dumps({"secret":TURNSTILE_SECRET_KEY,"response":token,"remoteip":_client_ip(request),"idempotency_key":str(uuid.uuid4())}).encode()
     req=urllib.request.Request("https://challenges.cloudflare.com/turnstile/v0/siteverify",data=data,headers={"Content-Type":"application/json"},method="POST")
     try:
         with urllib.request.urlopen(req,timeout=8) as resp:
@@ -32,6 +32,7 @@ def verify_turnstile(token, request:Request):
     except Exception:
         raise HTTPException(503,"Não foi possível validar a verificação anti-robô. Tente novamente.")
     if not result.get("success"):
+        print("Turnstile Siteverify failure:", result.get("error-codes", []), "hostname=", result.get("hostname"))
         raise HTTPException(400,"Verificação anti-robô inválida ou expirada. Tente novamente.")
     return True
 
