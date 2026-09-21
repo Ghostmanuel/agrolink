@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="pt-AO">
+<html lang="pt-AO"s
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>EPYALINK — Do campo ao mercado, conectado.</title>
@@ -25,7 +25,8 @@
 .auth-card{width:min(440px,calc(100% - 26px));padding:20px 20px 17px;border-radius:26px;background:rgba(255,255,255,.94);box-shadow:0 24px 70px rgba(0,0,0,.32)}
 .auth-logo{width:122px;height:92px;object-fit:contain;margin:-4px auto 2px}
 .auth-title{font-size:28px;letter-spacing:-.5px}.auth-sub{font-size:13px}
-.lang-picker{position:absolute;right:14px;top:14px;z-index:5}.lang-toggle{position:relative;z-index:10000;pointer-events:auto;border:1px solid rgba(255,255,255,.8);background:rgba(255,255,255,.9);color:#154a2a;border-radius:999px;padding:9px 12px;font-weight:800;box-shadow:0 8px 20px #0002;cursor:pointer}.lang-panel{display:none;pointer-events:none;position:absolute;right:0;top:48px;width:260px;background:#fff;border:1px solid var(--line);border-radius:16px;padding:8px;box-shadow:0 16px 38px #0003}.lang-panel.open{display:block;pointer-events:auto;z-index:99999}.lang-panel button{display:flex;width:100%;gap:9px;align-items:center;border:0;background:#fff;border-radius:10px;padding:10px;text-align:left;font:inherit;cursor:pointer}.lang-panel button:hover,.lang-panel button.active{background:#edf6ed}.lang-panel small{display:block;color:var(--muted);padding:7px 10px 3px}.lang-status{font-size:11px;color:var(--muted);margin:8px 0 0;text-align:center}
+.lang-picker{position:absolute;right:14px;top:14px;z-index:5}.lang-toggle{position:relative;z-index:10000;pointer-events:auto;border:1px solid rgba(255,255,255,.8);background:rgba(255,255,255,.9);color:#154a2a;border-radius:999px;padding:9px 12px;font-weight:800;box-shadow:0 8px 20px #0002;cursor:pointer}
+.lang-panel{display:none;position:absolute;display:none;right:0;top:48px;z-index: index 9999;background:#fff;border:1px solid var(--line);border-radius:12px;padding:6px;box-shadow:0 8px 25x rgba(0,0,0,.15);}.lang-panel.open{display: block, importat !important;pointer-events:auto!important;z-index:99999! important;}.lang-panel button{display:flex;width:100%;gap:9px;align-items:center;border:0;background:#fff;border-radius:10px;padding:10px;text-align:left;font:inherit;cursor:pointer}.lang-panel button:hover,.lang-panel button.active{background:#edf6ed}.lang-panel small{display:block;color:var(--muted);padding:7px 10px 3px}.lang-status{font-size:11px;color:var(--muted);margin:8px 0 0;text-align:center}
 .brand-copy{min-width:0}.brand-copy b,.brand-copy small{display:block;white-space:nowrap}.app-lang{margin-left:auto;position:relative;z-index:92}.app-lang .lang-panel{top:42px}.scope-dots{position:relative;z-index:93;flex:0 0 auto;min-width:44px;min-height:44px;padding:5px 9px;font-size:25px;line-height:1;border-radius:12px}.hamburger-menu{font-family:Arial,sans-serif;font-weight:700;letter-spacing:-2px}.brand .lang-toggle{background:#fff;padding:7px 10px}
 .smart-translation{display:flex;gap:8px;align-items:center;background:#f0f7ed;border:1px solid #d9e8d2;padding:9px 10px;border-radius:12px;font-size:12px;margin:8px 0}.smart-translation button{margin-left:auto;border:1px solid var(--g);background:#fff;color:var(--g);border-radius:9px;padding:6px 8px;font-weight:700}
 @media(max-width:620px){.lang-picker{top:10px;right:10px}.lang-toggle{padding:8px 10px}.auth-card{margin:40px auto 20px}.auth-logo{height:78px;width:110px}.auth-title{font-size:25px}}
@@ -125,7 +126,36 @@ async function saveVehicle(){try{await api('/api/vehicles',{method:'POST',body:J
 async function pay(id,total){const method=prompt('Método: MULTICAIXA_REFERENCE, MULTICAIXA_EXPRESS, IBAN ou KWIK','MULTICAIXA_REFERENCE');if(!method)return;try{await api(`/api/orders/${id}/payment`,{method:'POST',body:JSON.stringify({method,amount_kz:Number(total),reference:'',transaction_id:'',idempotency_key:crypto.randomUUID()})});alert('Pagamento registado como PENDING. A confirmação financeira deve vir do PSP.');loadOrders();closeModal()}catch(e){alert(e.message)}}
 async function confirmDelivery(did,oid){const code=$('code'+oid).value;if(!/^\d{6}$/.test(code))return alert('Informe os 6 dígitos.');try{await api(`/api/deliveries/${did}/confirm`,{method:'POST',body:JSON.stringify({code})});alert('Entrega confirmada.');closeModal();loadOrders()}catch(e){alert(e.message)}}
 async function openChat(id){closeModal();$('chatOrderId').value=id;show('chatScreen');loadChat()}
-async function loadChat(){const id=$('chatOrderId').value;if(!id)return;try{const rows=await api(`/api/orders/${id}/chat`);$('chatBox').innerHTML=rows.map(m=>`<div class="msg ${m.sender_id?'':''}"><b>${esc(m.sender_name)}</b><br>${esc(m.body)}</div>`).join('')||'<div class="muted">Sem mensagens.</div>';$('chatSend').classList.remove('hidden')}catch(e){alert(e.message)}}
+loadChat=async function(){
+  const id=$('chatOrderId').value;
+  if(!id)return;
+
+  try{
+    const rows=await api(`/api/orders/${id}/chat`);
+
+    $('chatBox').innerHTML=
+      rows.map(m=>`
+        <div class="msg">
+          <b>${esc(m.sender_name)}</b><br>
+          ${esc(m.body||'')}
+
+          ${m.attachment_url?
+            `<div style="margin-top:7px">
+              <a href="${esc(m.attachment_url)}" target="_blank">
+                📷 ${esc(t('Ver fotografia'))}
+              </a>
+            </div>`:''
+          }
+        </div>
+      `).join('')||
+      '<div class="muted">'+esc(t('Sem mensagens.'))+'</div>';
+
+    $('chatSend').classList.remove('hidden');
+
+  }catch(e){
+    alert(smartTranslate(e.message));
+  }
+}
 async function sendChat(){const id=$('chatOrderId').value,body=$('chatText').value;if(!body)return;try{await api(`/api/orders/${id}/chat`,{method:'POST',body:JSON.stringify({body})});$('chatText').value='';loadChat()}catch(e){alert(e.message)}}
 async function loadProfile(){try{const u=await api('/api/me');$('profileBox').innerHTML=`<div class="card"><h3>${esc(u.full_name)}</h3><p class="muted">${esc(u.phone)} · ${esc(roleLabel(u.role))}</p><p>${esc(u.province)} · ${esc(u.address)}</p>${u.producer?`<span class="tag">${esc(u.producer.company_name||u.producer.farm_name||'Produtor')}</span>`:''}</div>`;if(S.role==='seller')sellerPanel();if(((S.role==='transporter'||S.role==='private_transporter'||S.role==='transport_company')||S.role==='private_transporter'||S.role==='transport_company'))loadTransporters();if(S.role==='admin')adminPanel()}catch(e){$('profileBox').innerHTML='<div class="notice error">'+esc(e.message)+'</div>'}}
 async function sellerPanel(){$('sellerPanel').classList.remove('hidden');$('sellerPanel').innerHTML=`<div class="card"><h3>Publicar produto</h3><div class="field"><label>Nome</label><input id="pName"></div><div class="field"><label>Categoria</label><select id="pCat"></select></div><div class="grid"><div class="field"><label>Preço Kz</label><input id="pPrice" type="number"></div><div class="field"><label>Quantidade</label><input id="pQty" type="number"></div></div><div class="field"><label>Unidade</label><input id="pUnit" value="kg"></div><div class="field"><label>Localização</label><input id="pLoc"></div><div class="field"><label>Foto (URL opcional)</label><input id="pPhoto"></div><div class="field"><label>Descrição</label><textarea id="pDesc"></textarea></div><button class="btn full" onclick="publish()">Publicar</button></div>`;const cs=await api('/api/categories');$('pCat').innerHTML='<option value="">Sem categoria</option>'+cs.map(c=>`<option value="${c.id}">${esc(c.name)}</option>`).join('')}
@@ -150,25 +180,275 @@ const AL_INFO={
   'Ajuda e suporte': 'Para apoio, contacte a Nuvem JM pelos canais oficiais apresentados em Contactos.',
   'Contactos': 'Nuvem JM – Prestação de Serviços e Tecnologias de Informação, Limitada\nE-mail: nuvemjv69@gmail.com\nTelefone: +244 929 715 406\nTelefone: +244 934 678 932'
 };
-function showInfo(k){openModal();$('modalTitle').textContent=k;$('modalBody').innerHTML='<div class="card"><p style="white-space:pre-line">'+esc(AL_INFO[k])+'</p></div><div class="muted">© Nuvem JM – Prestação de Serviços e Tecnologias de Informação, Limitada. Todos os direitos reservados.</div>'}
+function showInfo(k){
+  openModal();
+  $('modalTitle').textContent=smartTranslate(k);
+  $('modalBody').innerHTML=
+    '<div class="card"><p style="white-space:pre-line">'+
+    esc(smartTranslate(AL_INFO[k]||''))+
+    '</p></div>'+
+    '<div class="muted">'+
+    '© Nuvem JM – Prestação de Serviços e Tecnologias de Informação, Limitada. Todos os direitos reservados.'+
+    '</div>';
 function accountMenu(){
-  const items=Object.keys(AL_INFO).map(k=>`<button class="btn secondary full" style="margin:4px 0;text-align:left" onclick="showInfo('${k.replace(/'/g,"\\'")}')">${esc(k)}</button>`).join('');
-  $('accountMenu').innerHTML='<div class="card"><h3>Informações e suporte</h3>'+items+'</div><div class="card"><h3>Configurações</h3><button class="btn secondary full" onclick="settingsPanel()">Abrir configurações</button></div>';
+  const items=Object.keys(AL_INFO).map(k=>
+    `<button class="btn secondary full" style="margin:4px 0;text-align:left"
+      onclick="showInfo('${k.replace(/'/g,"\\'")}')">
+      ${esc(smartTranslate(k))}
+    </button>`
+  ).join('');
+   $('accountMenu').innerHTML=
+    '<div class="card"><h3>'+
+    esc(t('Informações e suporte'))+
+    '</h3>'+items+
+    '</div>'+
+    '<div class="card"><h3>'+
+    esc(t('Configurações'))+
+    '</h3>'+
+    '<button class="btn secondary full" onclick="settingsPanel()">'+
+    esc(t('Abrir configurações'))+
+    '</button></div>';
+
 }
-async function settingsPanel(){openModal();$('modalTitle').textContent='Configurações';try{const rows=await api('/api/admin/settings');if(S.role!=='admin'){throw new Error('As configurações administrativas são exclusivas do administrador.')}$('modalBody').innerHTML='<div class="card">'+rows.map(r=>`<div class="field"><label>${esc(r.key)}</label><input id="set_${esc(r.key)}" value="${esc(r.value)}"><button class="btn secondary full" style="margin-top:5px" onclick="saveSetting('${esc(r.key)}')">Guardar</button></div>`).join('')+'</div>'}catch(e){$('modalBody').innerHTML='<div class="notice">Perfil e segurança pessoais devem ser geridos pelo utilizador. <br><br><b>Admin:</b> configurações operacionais estão disponíveis no painel administrativo.</div><button class="btn full" onclick="closeModal()">Fechar</button>'}}
-function downloadReport(){const blob=new Blob([JSON.stringify(window._agroReport||{},null,2)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='agrolink-relatorio.json';a.click();URL.revokeObjectURL(a.href)}
-async function saveSetting(k){try{const v=$('set_'+k).value;await api('/api/admin/settings/'+encodeURIComponent(k),{method:'PUT',body:JSON.stringify({value:v})});alert('Configuração guardada.')}catch(e){alert(e.message)}}
-async function adminAudit(action='',entity=''){try{const d=await api('/api/admin/audit?limit=200&action='+encodeURIComponent(action)+'&entity_type='+encodeURIComponent(entity));$('adminListBox').innerHTML=`<div class="card"><h3>Auditoria</h3><div class="grid"><div class="field"><label>Ação</label><input id="auditAction" value="${esc(action)}" placeholder="Ex.: LOGIN"></div><div class="field"><label>Módulo</label><input id="auditEntity" value="${esc(entity)}" placeholder="Ex.: orders"></div></div><button class="btn full" onclick="adminAudit(document.getElementById('auditAction').value,document.getElementById('auditEntity').value)">Filtrar auditoria</button><p class="muted">Total: ${d.total}</p>${d.items.map(r=>`<div style="border-top:1px solid var(--line);padding:9px 0"><b>${esc(r.action)}</b> · ${esc(r.entity_type||'')} #${esc(r.entity_id||'')}<br><span class="muted">${esc(r.created_at)} · ${esc(r.actor_name||'Sistema')} · ${esc(r.actor_phone||'')}</span><pre style="white-space:pre-wrap;font-size:11px">${esc(r.metadata||'{}')}</pre></div>`).join('')}</div>`}catch(e){alert(e.message)}}
-async function adminReports(){try{const r=await api('/api/admin/reports');window._agroReport=r;$('adminListBox').innerHTML='<div class="card"><h3>Relatórios</h3><button class="btn secondary full" onclick="downloadReport()">Exportar relatório</button><div class="grid">'+[['Vendas (Kz)',r.sales_total_kz],['Transporte (Kz)',r.transport_total_kz],['Comissões EPYALINK (Kz)',r.agrolink_commissions_kz],['Pedidos',r.orders_total],['Entregues',r.delivered_orders],['Utilizadores ativos',r.active_users],['Produtos ativos',r.products_active],['Pagamentos pendentes (Kz)',r.pending_payments_kz],['Liquidações pendentes (Kz)',r.pending_settlements_kz]].map(x=>`<div class="card"><span class="muted">${x[0]}</span><div class="stat">${Number(x[1]||0).toLocaleString('pt-AO')}</div></div>`).join('')+'</div><h4>Utilizadores por perfil</h4>'+r.users_by_role.map(x=>`<span class="tag">${esc(x.role)}: ${x.count}</span>`).join('')+'<h4>Pedidos por estado</h4>'+r.orders_by_status.map(x=>`<span class="tag">${esc(x.status)}: ${x.count}</span>`).join('')+'</div>'}catch(e){alert(e.message)}}
+async function settingsPanel(){
+  openModal();
+  $('modalTitle').textContent=t('Configurações');
+
+  if(S.role!=='admin'){
+    $('modalBody').innerHTML=
+      '<div class="notice">'+
+      esc(t('Perfil e segurança pessoais devem ser geridos pelo utilizador.'))+
+      '<br><br><b>Admin:</b> '+
+      esc(t('configurações operacionais estão disponíveis no painel administrativo.'))+
+      '</div>'+
+      '<button class="btn full" onclick="closeModal()">'+
+      esc(t('Fechar'))+
+      '</button>';
+    return;
+  }
+
+  try{
+    const rows=await api('/api/admin/settings');
+
+    $('modalBody').innerHTML=
+      '<div class="card">'+
+      rows.map(r=>`
+        <div class="field">
+          <label>${esc(r.key)}</label>
+          <input id="set_${esc(r.key)}" value="${esc(r.value)}">
+          <button class="btn secondary full" style="margin-top:5px"
+            onclick="saveSetting('${String(r.key).replace(/'/g,"\\'")}')">
+            ${esc(t('Guardar'))}
+          </button>
+        </div>
+      `).join('')+
+      '</div>';
+
+  }catch(e){
+    $('modalBody').innerHTML=
+      '<div class="notice error">'+
+      esc(smartTranslate(e.message))+
+      '</div>'+
+      '<button class="btn full" onclick="closeModal()">'+
+      esc(t('Fechar'))+
+      '</button>';
+  }
+}
+function downloadReport(){
+  const blob=new Blob(
+    [JSON.stringify(window._agroReport||{},null,2)],
+    {type:'application/json'}
+  );
+
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(blob);
+  a.download='epyalink-relatorio.json';
+  a.click();
+  URL.revokeObjectURL(a.href);
+}
+async function saveSetting(k){
+  try{
+    const v=$('set_'+k).value;
+
+    await api(
+      '/api/admin/settings/'+encodeURIComponent(k),
+      {
+        method:'PUT',
+        body:JSON.stringify({value:v})
+      }
+    );
+
+    alert(t('Configuração guardada.'));
+  }catch(e){
+    alert(smartTranslate(e.message));
+  }
+}
+async function adminAudit(action='',entity=''){
+  try{
+    const d=await api(
+      '/api/admin/audit?limit=200&action='+
+      encodeURIComponent(action)+
+      '&entity_type='+
+      encodeURIComponent(entity)
+    );
+
+    $('adminListBox').innerHTML=`
+      <div class="card">
+        <h3>${esc(t('Auditoria'))}</h3>
+
+        <div class="grid">
+          <div class="field">
+            <label>${esc(t('Ação'))}</label>
+            <input id="auditAction"
+              value="${esc(action)}"
+              placeholder="${esc(t('Ex.: LOGIN'))}">
+          </div>
+
+          <div class="field">
+            <label>${esc(t('Módulo'))}</label>
+            <input id="auditEntity"
+              value="${esc(entity)}"
+              placeholder="${esc(t('Ex.: orders'))}">
+          </div>
+        </div>
+
+        <button class="btn full"
+          onclick="adminAudit(
+            document.getElementById('auditAction').value,
+            document.getElementById('auditEntity').value
+          )">
+          ${esc(t('Filtrar auditoria'))}
+        </button>
+
+        <p class="muted">
+          ${esc(t('Total'))}: ${d.total}
+        </p>
+
+        ${d.items.map(r=>`
+          <div style="border-top:1px solid var(--line);padding:9px 0">
+            <b>${esc(r.action)}</b> ·
+            ${esc(r.entity_type||'')} #
+            ${esc(r.entity_id||'')}
+            <br>
+            <span class="muted">
+              ${esc(r.created_at)} ·
+              ${esc(r.actor_name||t('Sistema'))} ·
+              ${esc(r.actor_phone||'')}
+            </span>
+
+            <pre style="white-space:pre-wrap;font-size:11px">
+${esc(r.metadata||'{}')}
+            </pre>
+          </div>
+        `).join('')}
+      </div>
+    `;
+
+  }catch(e){
+    alert(smartTranslate(e.message));
+  }
+}
+async function adminReports(){
+  try{
+    const r=await api('/api/admin/reports');
+    window._agroReport=r;
+
+    const stats=[
+      ['Vendas (Kz)',r.sales_total_kz],
+      ['Transporte (Kz)',r.transport_total_kz],
+      ['Comissões EPYALINK (Kz)',r.agrolink_commissions_kz],
+      ['Pedidos',r.orders_total],
+      ['Entregues',r.delivered_orders],
+      ['Utilizadores ativos',r.active_users],
+      ['Produtos ativos',r.products_active],
+      ['Pagamentos pendentes (Kz)',r.pending_payments_kz],
+      ['Liquidações pendentes (Kz)',r.pending_settlements_kz]
+    ];
+
+    $('adminListBox').innerHTML=`
+      <div class="card">
+        <h3>${esc(t('Relatórios'))}</h3>
+
+        <button class="btn secondary full"
+          onclick="downloadReport()">
+          ${esc(t('Exportar relatório'))}
+        </button>
+
+        <div class="grid">
+          ${stats.map(x=>`
+            <div class="card">
+              <span class="muted">${esc(t(x[0]))}</span>
+              <div class="stat">
+                ${Number(x[1]||0).toLocaleString('pt-AO')}
+              </div>
+            </div>
+          `).join('')}
+        </div>
+
+        <h4>${esc(t('Utilizadores por perfil'))}</h4>
+
+        ${r.users_by_role.map(x=>`
+          <span class="tag">
+            ${esc(roleLabel(x.role))}: ${x.count}
+          </span>
+        `).join('')}
+
+        <h4>${esc(t('Pedidos por estado'))}</h4>
+
+        ${r.orders_by_status.map(x=>`
+          <span class="tag">
+            ${esc(smartTranslate(x.status))}: ${x.count}
+          </span>
+        `).join('')}
+      </div>
+    `;
+
+  }catch(e){
+    alert(smartTranslate(e.message));
+  }
+}
 async function uploadImage(file,purpose,entityId){if(!file)return null;if(!file.type.startsWith('image/'))throw new Error('Selecione uma imagem.');if(file.size>5*1024*1024)throw new Error('A imagem deve ter no máximo 5 MB.');const b64=await new Promise((res,rej)=>{const r=new FileReader();r.onload=()=>res(String(r.result).split(',')[1]);r.onerror=rej;r.readAsDataURL(file)});return api('/api/files/upload',{method:'POST',body:JSON.stringify({filename:file.name,content_type:file.type,data_base64:b64,purpose,entity_id:entityId})})}
-async function publish(){try{const d=await api('/api/products',{method:'POST',body:JSON.stringify({name:$('pName').value,category_id:$('pCat').value?Number($('pCat').value):null,price_kz:Number($('pPrice').value),quantity:Number($('pQty').value),unit:$('pUnit').value,location:$('pLoc').value,photo:null,description:$('pDesc').value})});const f=$('pPhotoFile').files[0];if(f){const up=await uploadImage(f,'product',d.id);await api('/api/products/'+d.id+'/photo?file_id='+encodeURIComponent(up.file_id),{method:'POST'})}alert('Produto publicado.');loadProducts()}catch(e){alert(e.message)}}
-sellerPanel=async function(){$('sellerPanel').classList.remove('hidden');$('sellerPanel').innerHTML=`<div class="card"><h3>Publicar produto</h3><div class="field"><label>Nome</label><input id="pName"></div><div class="field"><label>Categoria</label><select id="pCat"></select></div><div class="grid"><div class="field"><label>Preço Kz</label><input id="pPrice" type="number"></div><div class="field"><label>Quantidade</label><input id="pQty" type="number"></div></div><div class="field"><label>Unidade</label><input id="pUnit" value="kg"></div><div class="field"><label>Localização</label><input id="pLoc"></div><div class="field"><label>Fotografia do produto</label><input id="pPhotoFile" type="file" accept="image/*"></div><div class="field"><label>Descrição</label><textarea id="pDesc"></textarea></div><button class="btn full" onclick="publish()">Publicar produto</button></div>`;const cs=await api('/api/categories');$('pCat').innerHTML='<option value="">Sem categoria</option>'+cs.map(c=>`<option value="${c.id}">${esc(c.name)}</option>`).join('')}
+async function publish(){
+  try{
+    const d=await api('/api/products',{
+      method:'POST',
+      body:JSON.stringify({
+        name:$('pName').value,
+        category_id:$('pCat').value?Number($('pCat').value):null,
+        price_kz:Number($('pPrice').value),
+        quantity:Number($('pQty').value),
+        unit:$('pUnit').value,
+        location:$('pLoc').value,
+        photo:null,
+        description:$('pDesc').value
+      })
+    });
+
+    const f=$('pPhotoFile').files[0];
+
+    if(f){
+      const up=await uploadImage(f,'product',d.id);
+
+      await api(
+        '/api/products/'+d.id+'/photo?file_id='+
+        encodeURIComponent(up.file_id),
+        {method:'POST'}
+      );
+    }
+
+    alert(t('Produto publicado.'));
+    loadProducts();
+
+  }catch(e){
+    alert(smartTranslate(e.message));
+  }
+}
 async function sendChat(){try{const id=$('chatOrderId').value,body=$('chatText').value.trim(),file=$('chatPhoto').files[0];if(!body&&!file)return;let fileId=null;if(file){const up=await uploadImage(file,'chat',Number(id));fileId=up.file_id}await api(`/api/orders/${id}/chat`,{method:'POST',body:JSON.stringify({body,attachment_file_id:fileId})});$('chatText').value='';$('chatPhoto').value='';loadChat()}catch(e){alert(e.message)}}
 loadChat=async function(){const id=$('chatOrderId').value;if(!id)return;try{const rows=await api(`/api/orders/${id}/chat`);$('chatBox').innerHTML=rows.map(m=>`<div class="msg"><b>${esc(m.sender_name)}</b><br>${esc(m.body||'')}${m.attachment_url?`<div style="margin-top:7px"><a href="${esc(m.attachment_url)}" target="_blank">📷 Ver fotografia</a></div>`:''}</div>`).join('')||'<div class="muted">Sem mensagens.</div>';$('chatSend').classList.remove('hidden')}catch(e){alert(e.message)}}
 adminPanel=async function(){$('adminPanel').classList.remove('hidden');try{const d=await api('/api/admin/dashboard');$('adminPanel').innerHTML=`<div class="card"><h3>${esc(adminT('admin'))}</h3><div class="grid">${Object.entries(d).map(([k,v])=>`<div><span class="muted">${esc(adminT(k))}</span><div class="stat">${typeof v==='number'?Number(v).toLocaleString('pt-AO'):esc(adminValue(k,v))}</div></div>`).join('')}</div></div><div class="tabs"><button type="button" onclick="adminList('users')">${adminT('users')}</button><button type="button" onclick="adminList('producers')">${adminT('producers')}</button><button type="button" onclick="adminList('transporters')">${adminT('transporters')}</button><button type="button" onclick="adminList('vehicles')">${adminT('vehicles')}</button><button type="button" onclick="adminList('products')">${adminT('products')}</button><button type="button" onclick="adminList('orders')">${adminT('orders')}</button><button type="button" onclick="adminList('payments')">${adminT('payments')}</button><button type="button" onclick="adminList('commissions')">${adminT('commissions')}</button><button type="button" onclick="adminReports()">${adminT('Relatórios')}</button><button type="button" onclick="adminAudit()">${adminT('Auditoria')}</button><button type="button" onclick="settingsPanel()">${adminT('Configurações')}</button></div><div id="adminListBox"></div><div class="card"><h3>${esc(adminT('Liquidação'))}</h3><div class="field"><label>${esc(adminT('ID do pedido'))}</label><input id="releaseId" type="number"></div><button class="btn full" type="button" onclick="releaseOrder()">${esc(adminT('Liberar liquidação'))}</button></div>`}catch(e){$('adminPanel').innerHTML='<div class="notice error">'+esc(smartTranslate(e.message))+'</div>'}}
 
 if($('accountMenu')) accountMenu();
-/* EPYALINK v16.2.1 — stabilization, cache, consistent header and product publishing UX */
+/* EPYALINK v16.2.1 — stabilization, cache, consistent header and product publishing UX */ 
 (function(){
   const style=document.createElement('style');
   style.textContent=`
@@ -283,11 +563,71 @@ if($('accountMenu')) accountMenu();
   window.loadChat=async function(){const id=$('chatOrderId').value;if(!id)return;try{const d=await api('/api/orders/'+id);const rows=await api('/api/orders/'+id+'/chat');$('chatBox').innerHTML=`<div class="card"><div class="row"><div><b>${esc(d.product.name)}</b><div class="muted">${esc(d.order.quantity)} ${esc(d.product.unit)} · ${money(d.order.product_total_kz)}</div></div></div></div>`+rows.map(m=>`<div class="msg ${m.sender_id===S.uid?'mine':''}"><div class="row"><div class="scope-avatar" style="width:32px;height:32px"></div><div><b>${esc(m.sender_name)}</b><div class="muted">${esc(roleLabel(m.sender_role))} · ${esc(m.sender_province||'')}</div></div></div><div style="margin-top:5px">${esc(m.body||'')}</div>${m.attachment_url?`<div style="margin-top:7px"><a href="${esc(m.attachment_url)}" target="_blank">📷 Fotografia</a></div>`:''}</div>`).join('')||'<div class="muted">Sem mensagens.</div>';$('chatSend').classList.remove('hidden');const imgs=[...$('chatBox').querySelectorAll('.scope-avatar')];const ids=rows.map(x=>x.sender_id);for(let i=0;i<ids.length;i++){const u=await avatarUrl(ids[i]);if(u&&imgs[i+1])imgs[i+1].style.backgroundImage=`url(${u})`;}}catch(e){alert(e.message)}};
 
   // Seller/farm identity is inherited from profile; product publication no longer asks seller to repeat it.
-  window.sellerPanel=async function(){
-    $('sellerPanel').classList.remove('hidden');
-    $('sellerPanel').innerHTML=`<div class="card"><h3>Publicar produto</h3><div class="field"><label>Nome</label><input id="pName" required></div><div class="field"><label>Categoria</label><select id="pCat"></select></div><div class="grid"><div class="field"><label>Preço Kz</label><input id="pPrice" type="number" min="0" required></div><div class="field"><label>Quantidade disponível</label><input id="pQty" type="number" min="0" step="0.01" required></div></div><div class="field"><label>Unidade</label><select id="pUnit"><option value="kg">kg</option><option value="tonne">tonelada</option><option value="sack">saco</option><option value="unit">unidade</option></select></div><div class="field"><label>Origem / fazenda</label><input id="pLoc" placeholder="Origem/fazenda (opcional; o perfil do produtor é a referência principal)"></div><div class="field"><label>Fotografia do produto</label><input id="pPhotoFile" type="file" accept="image/*"><div class="muted small">Máximo 5 MB.</div></div><div class="field"><label>Descrição</label><textarea id="pDesc"></textarea></div><button class="btn full" onclick="publish()">Publicar produto</button></div>`;
-    const cs=await api('/api/categories');$('pCat').innerHTML='<option value="">Sem categoria</option>'+cs.map(c=>`<option value="${c.id}">${esc(c.name)}</option>`).join('');
-  };
+  window.ssellerPanel=async function(){
+  $('sellerPanel').classList.remove('hidden');
+
+  $('sellerPanel').innerHTML=`
+    <div class="card">
+      <h3>${esc(t('Publicar produto'))}</h3>
+
+      <div class="field">
+        <label>${esc(t('Nome'))}</label>
+        <input id="pName">
+      </div>
+
+      <div class="field">
+        <label>${esc(t('Categoria'))}</label>
+        <select id="pCat"></select>
+      </div>
+
+      <div class="grid">
+        <div class="field">
+          <label>${esc(t('Preço Kz'))}</label>
+          <input id="pPrice" type="number">
+        </div>
+
+        <div class="field">
+          <label>${esc(t('Quantidade'))}</label>
+          <input id="pQty" type="number">
+        </div>
+      </div>
+
+      <div class="field">
+        <label>${esc(t('Unidade'))}</label>
+        <input id="pUnit" value="kg">
+      </div>
+
+      <div class="field">
+        <label>${esc(t('Localização'))}</label>
+        <input id="pLoc">
+      </div>
+
+      <div class="field">
+        <label>${esc(t('Fotografia do produto'))}</label>
+        <input id="pPhotoFile" type="file" accept="image/*">
+      </div>
+
+      <div class="field">
+        <label>${esc(t('Descrição'))}</label>
+        <textarea id="pDesc"></textarea>
+      </div>
+
+      <button class="btn full" onclick="publish()">
+        ${esc(t('Publicar produto'))}
+      </button>
+    </div>
+  `;
+
+  const cs=await api('/api/categories');
+
+  $('pCat').innerHTML=
+    '<option value="">'+
+    esc(t('Sem categoria'))+
+    '</option>'+
+    cs.map(c=>
+      `<option value="${c.id}">${esc(c.name)}</option>`
+    ).join('');
+}
 
   // Add rating/dispute controls to delivered orders.
   const oldLoadOrders=window.loadOrders;
@@ -322,7 +662,7 @@ if($('accountMenu')) accountMenu();
     es:{'buyer':'Comprador','seller':'Vendedor','private_transporter':'Transportista independiente','transport_company':'Empresa de transporte','admin':'Administrador','SELLER_ACCEPTED':'Aceptado por el vendedor','SELLER_REJECTED':'Rechazado por el vendedor','PENDING':'Pendiente','PAID':'Pagado','NOT_STARTED':'No iniciado','DELIVERED':'Entregado','IN_TRANSIT':'En transporte','REQUESTED':'Solicitado','ACCEPTED':'Aceptado','REJECTED':'Rechazado','COMPLETED':'Completado','CANCELLED':'Cancelado'}
   };
   const EXTRA_I18N={
-    pt:{'tonelada':'tonelada','saco':'saco','unidade':'unidade','Origem/fazenda (opcional; o perfil do produtor é a referência principal)':'Origem/fazenda (opcional; o perfil do produtor é a referência principal)','Liberar liquidação':'Liberar liquidação','Relatórios':'Relatórios','Auditoria':'Auditoria','Configurações':'Configurações'},
+    pt:{'Informações e suporte':'Informações e suporte','Configurações':'Configurações','Abrir,configurações':'brir,configurações','Fechar':'Fechar','Guardar':'Guardar','Configuração guardada':'Configuração guardada','Perfil e segurança pessoais devem ser geridos pelo utilizador':'Perfil e segurança pessoais devem ser geridos pelo utilizador','configurações operacionais estão disponíveis no painel administrativo':'configurações operacionais estão disponíveis no painel administrativ','Ação':'Ação','Módulo':'Modulo','Ex.: LOGIN':'EX.:LOGIN','Ex.: orders':'Ex.: pedidos','Filtrar auditoria':'Filtrar auditoria','Total':'Total','Sistema':'Sistema','Exportar relatório':'Exportar relatório','Utilizadores por perfil':'Utilizadores por perfil','Pedidos por estado':'Pedidos por estado','Vendas (Kz)':'Vendas (Kz)','Transporte (Kz)':'Transporte (Kz)','Comissões EPYALINK(Kz)':'Comissões PYALINK(Kz)','Pedidos':'Pedidos','Entregues':'Entregues','Utilizadores ativos': 'Utilizadores ativos','Produtos ativos':'Produtos ativos','Pagamentos pendentes (Kz)':'Pagamentos pendentes','Liquidações pendentes (Kz)':'Liquidações pendentes (Kz)','Publicar produto':'Publicar produtos','Nome':'Nome','Categoria':'Categorias','Preço Kz':'Preeço (Kz)','Quantidade','Quantidade','Unidade':'Unidade','Localização':'Localização','Fotografia do produto':'Fotografia do produto','Descrição':'Descrição','Sem categoria':'Sem categira','Produto publicado':'Produto publicado','Ver fotografia':'Ver fotografia','Sem mensagens.':'Sem mensagens','tonelada':'tonelada','saco':'saco','unidade':'unidade','Origem/fazenda (opcional; o perfil do produtor é a referência principal)':'Origem/fazenda (opcional; o perfil do produtor é a referência principal)','Liberar liquidação':'Liberar liquidação','Relatórios':'Relatórios','Auditoria':'Auditoria','Configurações':'Configurações'},
     en:{'tonelada':'tonne','saco':'sack','unidade':'unit','Origem/fazenda (opcional; o perfil do produtor é a referência principal)':'Origin/farm (optional; farmer profile is the main reference)','Liberar liquidação':'Release settlement','Relatórios':'Reports','Auditoria':'Audit','Configurações':'Settings'},
     fr:{'tonelada':'tonne','saco':'sac','unidade':'unité','Origem/fazenda (opcional; o perfil do produtor é a referência principal)':'Origine/ferme (facultatif ; le profil du producteur est la référence principale)','Liberar liquidação':'Libérer le règlement','Relatórios':'Rapports','Auditoria':'Audit','Configurações':'Paramètres'},
     es:{'tonelada':'tonelada','saco':'saco','unidade':'unidad','Origem/fazenda (opcional; o perfil do produtor é a referência principal)':'Origen/granja (opcional; el perfil del productor es la referencia principal)','Liberar liquidação':'Liberar liquidación','Relatórios':'Informes','Auditoria':'Auditoría','Configurações':'Configuración'}
@@ -493,7 +833,26 @@ if($('accountMenu')) accountMenu();
   window.epyaT=t;
   window.epyaLanguages=LANGS;
   window.epyaRenderLanguages=renderAll;
-  window.toggleLangMenu=function(id){const el=document.getElementById(id);if(!el)return;el.classList.toggle('open');el.style.pointerEvents=el.classList.contains('open')?'auto':'none';};
+  window.toggleLangMenu=function(menuId){
+    const panel=document.getElementById(menuId || 'appLangMenu');
+    if(!panel)return;
+
+    const isOpen=panel.classList.contains('open');
+
+    // Fecha outros menus de idioma
+    document.querySelectorAll('.lang-panel').forEach(p=>{
+        p.classList.remove('open');
+        p.style.display='none';
+        p.style.pointerEvents='none';
+    });
+
+    if(!isOpen){
+        panel.classList.add('open');
+        panel.style.display='block';
+        panel.style.pointerEvents='auto';
+        panel.style.zIndex='99999';
+    }
+};
   window.epyaT=t;
   window.epyaLanguages=LANGS;
   window.epyaRenderLanguages=renderAll;
