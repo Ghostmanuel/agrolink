@@ -142,7 +142,19 @@ def manifest(): return FileResponse("manifest.json",media_type="application/mani
 @app.get("/sw.js")
 def sw(): return FileResponse("sw.js",media_type="application/javascript")
 @app.get("/LogoAgrolink.jpeg")
-def logo(): return FileResponse("LogoAgrolink.jpeg",media_type="image/jpeg")
+def logo_legacy(): return FileResponse("LogoAgrolink.jpeg",media_type="image/jpeg",headers={"Cache-Control":"no-store"})
+
+@app.get("/LogoEpyalink.png")
+def logo_epyalink(): return FileResponse("LogoEpyalink.png",media_type="image/png",headers={"Cache-Control":"no-store"})
+
+@app.get("/login-bg.jpg")
+def login_bg(): return FileResponse("login-bg.jpg",media_type="image/jpeg",headers={"Cache-Control":"no-store"})
+
+@app.get("/icon-192.png")
+def icon_192(): return FileResponse("icon-192.png",media_type="image/png",headers={"Cache-Control":"no-store"})
+
+@app.get("/icon-512.png")
+def icon_512(): return FileResponse("icon-512.png",media_type="image/png",headers={"Cache-Control":"no-store"})
 
 @app.get("/api/public-config")
 def public_config():
