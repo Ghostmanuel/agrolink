@@ -270,8 +270,8 @@ function accountMenu() {
   openModal('#modal');
 }
 async function settingsPanel() {
-  $('#modalTitle').textContent = 'Definições';
-  const options = Object.entries(window.epyalanguages || {}).map(([k, v]) => `<option value="${esc(k)}" ${k === (localStorage.getItem('epyalink_lang') || 'pt') ? 'selected' : ''}>${esc(v)}</option>`).join('');
+  if ($('#modalTitle')) $('#modalTitle').textContent = 'Definições';
+  const options = Object.entries(window.epyalanguages || {}).map(([k, v]) => <option value="${esc(k)}" ${k === (localStorage.getItem('epyalink_lang') \vert{}\vert{} 'pt') ? 'selected' : ''}>${esc(v)}</option>).join('');
   let html = `<div class="card"><h3>Idioma</h3><p class="muted">O idioma da aplicação é alterado apenas aqui.</p><div class="field"><label>Selecionar idioma</label><select id="langSelect" onchange="changeLang(this.value)">${options}</select></div></div>;
   
   if (S.role === 'admin') {
@@ -281,8 +281,9 @@ async function settingsPanel() {
     } catch (e) {
       html += `<div class="card"><p class="notice error">${esc(e.message)}</p></div>`;
     }
-  } 
-  $('#modalBody').innerHTML = html + <button class="btn full" onclick="closeModal('#modal')">Fechar</button>;
+  }
+
+  if ($('#modalBody')) $('#modalBody').innerHTML = html + `<button class="btn full" onclick="closeModal('#modal')">Fechar</button>`;
   openModal('#modal');
 }
 function downloadReport(){const blob=new Blob([JSON.stringify(window._agroReport||{},null,2)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='agrolink-relatorio.json';a.click();URL.revokeObjectURL(a.href)}
