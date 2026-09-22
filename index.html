@@ -235,20 +235,23 @@ function accountMenu() {
       <button class="btn danger full" style="margin-top: 8px;" onclick="logout();">Sair da conta</button>
     </div>`;
   }
-
   openModal('#modal');
-
-async function settingsPanel(){
-  $('modalTitle').textContent='Definições';
-  const options=Object.entries(window.epyaLanguages||{}).map(([k,v])=>`<option value="${esc(k)}" ${k===(localStorage.getItem('epyalink_language')||'pt')?'selected':''}>${esc(v.label)} — ${esc(v.status)}</option>`).join('');
-  let html=`<div class="card"><h3>Idioma</h3><p class="muted">O idioma da aplicação é alterado apenas aqui.</p><div class="field"><label>Idioma</label><select id="userLanguage" onchange="setLanguage(this.value);settingsPanel()">${options}</select></div></div>`;
-  if(S.role==='admin'){
-    try{
-      const rows=await api('/api/admin/settings');
-      html+=`<div class="card"><h3>Configurações operacionais</h3>${rows.map(r=>`<div class="field"><label>${esc(r.key)}</label><input id="set_${esc(r.key)}" value="${esc(r.value)}"><button class="btn secondary full" style="margin-top:5px" onclick="saveSetting('${esc(r.key)}')">Guardar</button></div>`).join('')}</div>`;
-    }catch(e){html+=`<div class="notice error">${esc(e.message)}</div>`}
-  }
-  $('modalBody').innerHTML=html+`<button class="btn full" onclick="closeModal()">Fechar</button>`;
+}
+async function settingsPanel() {
+  $('#modalTitle').textContent = 'Definições';
+  const options = Object.entries(window.epyalanguages || {}).map(([k, v]) => `<option value="${esc(k)}" ${k === (localStorage.getItem('epyalink_lang') || 'pt') ? 'selected' : ''}>${esc(v)}</option>).join('');
+  let html = `<div class="card"><h3>Idioma</h3><p class="muted">O idioma da aplicação é alterado apenas aqui.</p><div class="field"><label>Selecionar idioma</label><select id="langSelect" onchange="changeLang(this.value)">${options}</select></div></div>;
+  
+  if (S.role === 'admin') {
+    try {
+      const rows = await api('/api/admin/settings');
+      html += <div class="card"><h3>Configurações operacionais</h3>${rows.map(r => `<div class="field"><label>${esc(r.key)}</label><input id="set_${r.key}" value="${esc(r.value)}"><button class="btn" onclick="saveSetting('${r.key}')">Salvar</button></div>).join('')}</div>`;
+    } catch (e) {
+      html += <div class="card"><p class="notice error">${esc(e.message)}</p></div>;
+    }
+  } 
+  $('#modalBody').innerHTML = html + <button class="btn full" onclick="closeModal('#modal')">Fechar</button>;
+  openModal('#modal');
 }
 function downloadReport(){const blob=new Blob([JSON.stringify(window._agroReport||{},null,2)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='agrolink-relatorio.json';a.click();URL.revokeObjectURL(a.href)}
 async function saveSetting(k){try{const v=$('set_'+k).value;await api('/api/admin/settings/'+encodeURIComponent(k),{method:'PUT',body:JSON.stringify({value:v})});alert('Configuração guardada.')}catch(e){alert(e.message)}}
