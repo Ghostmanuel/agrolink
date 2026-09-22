@@ -20,3 +20,9 @@ Cloudflare Turnstile exige validação server-side; os tokens expiram em 5 minut
 
 ## v15 — serviços configuráveis
 `ROUTING_BASE_URL`, `GEOCODING_BASE_URL`, `JWT_EXPIRE_MINUTES`, `FILE_STORAGE_DIR` e `MAX_UPLOAD_BYTES` podem ser configurados no ambiente.
+
+### Recuperação de palavra-passe (v16.2.2)
+- OTP por SMS preparado para KambaSMS através das variáveis `KAMBASMS_API_KEY` e `PASSWORD_RESET_SMS_PROVIDER=kambasms`.
+- O backend gera/valida a recuperação sem expor o código em produção; quando o provedor KambaSMS está configurado, o OTP é enviado pelo endpoint `/otp/send` e validado pelo endpoint `/otp/verify`.
+- Há limite local de 3 solicitações por hora por conta e intervalo mínimo de 60 segundos.
+- `PASSWORD_RESET_DEMO=true` é apenas para demonstração/teste e pode devolver o OTP local na resposta. Não usar em produção.
