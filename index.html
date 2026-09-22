@@ -11,160 +11,460 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <link rel="apple-touch-icon" href="/icon-192.png">
   <style>
-  :root{--g:#2f6b3a;--gd:#1e4a28;--o:#c9752f;--bg:#f7f8f3Here is the continuation to properly close and complete your HTML code. 
+    :root{--g:#2f6b3a;--gd:#1e4a28;--o:#c9752f;--bg:#f7f8f3;--card:#fff;--txt:#16231a;--muted:#667267;--line:#dde4d8;--danger:#b4432e}
+    *{box-sizing:border-box}
+    body{margin:0;background:var(--bg);color:var(--txt);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+    #app{max-width:520px;margin:auto;min-height:100vh;background:var(--bg)}
+    header{position:sticky;top:0;z-index:10;background:rgba(255,255,255,.96);backdrop-filter:blur(12px);border-bottom:1px solid var(--line);padding:10px 14px}
+    .brand{display:flex;align-items:center;gap:10px;min-height:52px}
+    .brand img{width:48px;height:48px;object-fit:contain;border-radius:12px}
+    .brand b{font-size:18px}
+    .brand small{display:block;color:var(--g)}
+    main{padding:14px 14px 100px}
+    .screen{display:none}
+    .screen.active{display:block}
+    .card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:14px;margin-bottom:12px;box-shadow:0 2px 10px #1930180d}
+    .row{display:flex;gap:8px;align-items:center}
+    .between{justify-content:space-between}
+    .grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+    .field{margin:9px 0}
+    .field label{font-size:12px;color:var(--muted);display:block;margin-bottom:5px}
+    .field input,.field select,.field textarea{width:100%;padding:11px;border:1px solid var(--line);border-radius:10px;background:#fff;font:inherit}
+    .field textarea{min-height:80px}
+    .btn{border:0;border-radius:11px;padding:11px 13px;background:var(--g);color:white;font-weight:700;cursor:pointer}
+    .btn.secondary{background:white;color:var(--g);border:1px solid var(--g)}
+    .btn.orange{background:var(--o)}
+    .btn.danger{background:var(--danger)}
+    .btn.full{width:100%}
+    .muted{color:var(--muted);font-size:13px}
+    .price{font-weight:800;color:var(--gd);font-size:18px}
+    .tag{display:inline-block;background:#edf4e9;color:var(--gd);border-radius:999px;padding:4px 8px;font-size:11px;margin:2px}
+    .search{display:flex;gap:8px}
+    .search input{flex:1;padding:12px;border:1px solid var(--line);border-radius:12px}
+    .tabs{display:flex;gap:7px;overflow:auto;margin-bottom:12px}
+    .tabs button{white-space:nowrap;border:1px solid var(--line);background:white;border-radius:999px;padding:8px 11px}
+    .tabs button.active{background:var(--g);color:white}
+    .bottom{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:min(520px,100%);display:flex;background:white;border-top:1px solid var(--line);padding:8px 4px calc(8px + env(safe-area-inset-bottom));z-index:20}
+    .bottom button{flex:1;border:0;background:none;color:var(--muted);font-size:11px}
+    .bottom button.active{color:var(--g)}
+    .hidden{display:none!important}
+    .notice{padding:10px;border-radius:10px;background:#fff4dc;margin:10px 0;font-size:13px}
+    .ok{background:#eaf6ea}
+    .error{background:#fdecea;color:#8b2415}
+    .product img{width:100%;height:150px;object-fit:cover;border-radius:12px;background:#eef2ea}
+    .auth{position:relative;min-height:100vh;padding:20px 0;display:flex;align-items:center;justify-content:center;background:#173d22}
+    .auth-card{position:relative;z-index:1;width:min(430px,calc(100% - 28px));padding:22px 20px 18px;background:rgba(255,255,255,.96);border-radius:24px;box-shadow:0 18px 55px rgba(0,0,0,.28)}
+    .auth-logo{width:112px;height:112px;object-fit:contain;display:block;margin:0 auto 6px}
+    .auth-title{text-align:center;margin:4px 0 2px;color:var(--gd);font-size:26px}
+    .auth-sub{text-align:center;margin:0 0 16px}
+    .auth-switch{text-align:center;margin:14px 0 0;font-size:13px}
+    .auth-switch button{border:0;background:none;color:var(--g);font-weight:800;cursor:pointer}
+    .auth-eye{position:relative}
+    .auth-eye input{padding-right:46px}
+    .auth-eye button{position:absolute;right:6px;top:50%;transform:translateY(-50%);border:0;background:transparent;font-size:20px;cursor:pointer;color:var(--muted)}
+    .modal{position:fixed;inset:0;background:#0008;display:none;z-index:50;align-items:flex-end}
+    .modal.open{display:flex}
+    .sheet{background:white;width:min(520px,100%);border-radius:20px 20px 0 0;padding:18px;max-height:90vh;overflow:auto}
+    .chat{max-height:50vh;overflow:auto}
+    .msg{padding:8px 10px;border-radius:12px;background:#edf2ea;margin:6px 0}
+    .mine{background:#dcefdc;margin-left:28px}
+  </style>
+</head>
+<body>
+<div id="app">
+  <section id="auth" class="screen active auth">
+    <div class="auth-card">
+      <img class="auth-logo" src="/LogoEpyalink.png" alt="EPYALINK" onerror="this.src='data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' width=\'100\' height=\'100\' viewBox=\'0 0 100 100\'><rect width=\'100\' height=\'100\' fill=\'%232f6b3a\'/><text x=\'50%\' y=\'55%\' dominant-baseline=\'middle\' text-anchor=\'middle\' fill=\'white\' font-size=\'20\'>EPYA</text></svg>'">
+      <h1 class="auth-title">EPYALINK</h1>
+      <p class="muted auth-sub">Do campo ao mercado, conectado.</p>
 
-The original code stops inside the `loadChat` function right after the `try {` block. The snippet below provides the missing JavaScript logic to finish the chat system, close all open scripts and DOM structures, and guarantee valid HTML.
+      <form id="loginForm">
+        <div class="field"><label>Telefone</label><input id="loginPhone" inputmode="tel" placeholder="900 000 001" required></div>
+        <div class="field auth-eye"><label>Palavra-passe</label><input id="loginPassword" type="password" required><button type="button" onclick="togglePassword('loginPassword',this)">👁</button></div>
+        <div id="loginTurnstile" class="cf-turnstile"></div>
+        <button class="btn full" type="submit" style="margin-top:10px">Entrar</button>
+        <button type="button" class="btn secondary full" style="margin-top:8px" onclick="openRecovery()">Esqueci a palavra-passe</button>
+        <div class="auth-switch">Ainda não tem conta? <button type="button" onclick="authMode('register')">Criar conta</button></div>
+      </form>
 
-### Code Completion
+      <form id="registerForm" class="hidden">
+        <div class="field"><label>Nome completo</label><input id="rName" required minlength="3"></div>
+        <div class="field"><label>Telefone</label><input id="rPhone" inputmode="tel" required placeholder="900 000 001"></div>
+        <div class="field auth-eye"><label>Palavra-passe (mín. 8)</label><input id="rPass" type="password" minlength="8" required><button type="button" onclick="togglePassword('rPass',this)">👁</button></div>
+        <div class="field"><label>Perfil</label>
+          <select id="rRole" onchange="roleFields()">
+            <option value="buyer">Comprador</option>
+            <option value="seller">Produtor / Vendedor</option>
+            <option value="transport_company">Empresa Transportadora</option>
+            <option value="private_transporter">Transportador Particular</option>
+          </select>
+        </div>
+        <div class="field"><label>Província</label><input id="rProvince" required></div>
+        <div class="field"><label>Endereço</label><input id="rAddress" required></div>
+        <div id="sellerFields" class="hidden">
+          <div class="field"><label>Empresa / Fazenda</label><input id="rCompany" placeholder="Nome da empresa"></div>
+          <div class="field"><label>Fazenda</label><input id="rFarm" placeholder="Nome da fazenda"></div>
+        </div>
+        <div id="companyFields" class="hidden">
+          <div class="field"><label>Nome da empresa transportadora</label><input id="rTransportCompany" placeholder="Ex.: Transportes ABC"></div>
+        </div>
+        <div id="transFields" class="hidden">
+          <div class="field"><label>BI</label><input id="rBI" placeholder="Número do BI"></div>
+        </div>
+        <div id="registerTurnstile" class="cf-turnstile"></div>
+        <button class="btn full" type="submit" style="margin-top:10px">Criar conta</button>
+        <div class="auth-switch">Já tem conta? <button type="button" onclick="authMode('login')">Entrar</button></div>
+      </form>
 
-Add the following code directly after `try{` at the end of your snippet:
-
-```javascript
-    const msgs = await api(`/api/chat/${id}`);
-    $('chatSend').classList.remove('hidden');$('chatBox').innerHTML = msgs.length ? msgs.map(m => {
-      const isMine = m.sender_name === S.name;
-      return `<div class="msg ${isMine ? 'mine' : ''}">
-        <div><b>${esc(m.sender_name)}</b> <small class="muted">${esc(m.created_at || '')}</small></div>
-        ${m.message ? `<div>${esc(m.message)}</div>` : ''}
-        ${m.photo ? `<img src="${esc(m.photo)}" style="max-width:100%;border-radius:8px;margin-top:6px;" alt="Anexo">` : ''}
-      </div>`;
-    }).join('') : '<div class="notice">Nenhuma mensagem ainda. Inicie a conversa!</div>';
-    
-    // Auto-scroll chat to bottom
-    const chatBox = $('chatBox');
-    chatBox.scrollTop = chatBox.scrollHeight;
-  } catch(e) {
-    $('chatBox').innerHTML = '<div class="notice error">' + esc(e.message) + '</div>';
-    $('chatSend').classList.add('hidden');
-  }
-};
-
-async function sendChat() {
-  const id = $('chatOrderId').value;
-  const text = $('chatText').value.trim();
-  const fileInput = $('chatPhoto');
-  
-  if (!id || (!text && !fileInput.files.length)) return;
-
-  try {
-    let photoUrl = null;
-    
-    // Convert file to Base64 data URL if selected
-    if (fileInput.files.length) {
-      photoUrl = await new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onload = () => resolve(reader.result);
-        reader.onerror = reject;
-        reader.readAsDataURL(fileInput.files[0]);
-      });
-    }
-
-    await api(`/api/chat/${id}`, {
-      method: 'POST',
-      body: JSON.stringify({ message: text, photo: photoUrl })
-    });
-
-    $('chatText').value = '';
-    fileInput.value = '';
-    loadChat();
-  } catch(e) {
-    alert('Erro ao enviar mensagem: ' + e.message);
-  }
-}
-
-async function loadProfile() {
-  try {
-    const user = await api('/api/auth/me');
-    let html = `
-      <div class="card">
-        <h3>${esc(user.full_name)}</h3>
-        <p class="muted"><strong>Telefone:</strong> ${esc(user.phone)}</p>
-        <p class="muted"><strong>Perfil:</strong> ${esc(user.role)}</p>
-        <p class="muted"><strong>Província:</strong> ${esc(user.province || 'Não informada')}</p>
-        <p class="muted"><strong>Endereço:</strong> ${esc(user.address || 'Não informado')}</p>
-        <button class="btn danger full" style="margin-top:12px" onclick="logout()">Sair da Conta</button>
+      <div id="authMsg"></div>
+      
+      <div id="recoveryBox" class="card hidden">
+        <h3>Recuperar palavra-passe</h3>
+        <div class="field"><label>Telefone</label><input id="fpPhone" inputmode="tel" placeholder="900 000 001"></div>
+        <button class="btn full" onclick="requestRecovery()">Enviar código</button>
+        <div id="recoveryCodeBox" class="hidden">
+          <div class="field"><label>Código recebido</label><input id="fpCode" inputmode="numeric" maxlength="6"></div>
+          <div class="field auth-eye"><label>Nova palavra-passe</label><input id="fpNew" type="password" minlength="8"></div>
+          <button class="btn full" onclick="resetPassword()">Alterar palavra-passe</button>
+        </div>
+        <button class="btn secondary full" style="margin-top:8px" onclick="closeRecovery()">Voltar</button>
       </div>
-    `;
-    
-    if (S.role === 'seller') {
-      html += `
+    </div>
+  </section>
+
+  <header id="top" class="hidden">
+    <div class="brand">
+      <img src="/LogoEpyalink.png" alt="Logo" onerror="this.style.display='none'">
+      <div><b>EPYALINK</b><small>Mercado agrícola</small></div>
+    </div>
+  </header>
+
+  <main id="main" class="hidden">
+    <section id="market" class="screen active">
+      <div class="row between">
+        <div><h2>Mercado</h2><div class="muted">Produtos agrícolas em Angola</div></div>
+        <button class="btn orange" onclick="aiInsights()">IA</button>
+      </div>
+      <div class="search" style="margin-top:10px">
+        <input id="search" placeholder="Pesquisar produto ou local">
+        <button class="btn" onclick="loadProducts()">Pesquisar</button>
+      </div>
+      <div id="cats" class="tabs" style="margin-top:10px"></div>
+      <div id="products"></div>
+    </section>
+
+    <section id="orders" class="screen">
+      <h2>Pedidos</h2>
+      <div id="ordersList"></div>
+    </section>
+
+    <section id="transport" class="screen">
+      <div class="row between">
+        <h2>Transporte</h2>
+        <button class="btn secondary" onclick="loadTransporters()">Atualizar</button>
+      </div>
+      <div id="transportContent"></div>
+    </section>
+
+    <section id="chatScreen" class="screen">
+      <h2>Chat</h2>
+      <div class="field"><label>ID do pedido</label><input id="chatOrderId" type="number"></div>
+      <button class="btn" onclick="loadChat()">Abrir conversa</button>
+      <div id="chatBox" class="chat" style="margin-top:10px"></div>
+      <div id="chatSend" class="hidden" style="margin-top:10px">
+        <div class="field"><input id="chatPhoto" type="file" accept="image/*"></div>
+        <div class="row">
+          <input id="chatText" style="flex:1" placeholder="Escreva a mensagem...">
+          <button class="btn" onclick="sendChat()">Enviar</button>
+        </div>
+      </div>
+    </section>
+
+    <section id="profile" class="screen">
+      <h2>Perfil</h2>
+      <div id="profileBox"></div>
+    </section>
+  </main>
+
+  <nav id="nav" class="bottom hidden">
+    <button onclick="show('market')"><b>⌂</b>Mercado</button>
+    <button onclick="show('orders')"><b>▣</b>Pedidos</button>
+    <button onclick="show('transport')"><b>🚚</b>Transporte</button>
+    <button onclick="show('chatScreen')"><b>💬</b>Chat</button>
+    <button onclick="show('profile')"><b>◉</b>Perfil</button>
+  </nav>
+
+  <div id="modal" class="modal">
+    <div class="sheet">
+      <div class="row between">
+        <h3 id="modalTitle">EPYALINK</h3>
+        <button class="btn secondary" onclick="closeModal()">Fechar</button>
+      </div>
+      <div id="modalBody" style="margin-top:10px"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+  const S = {
+    token: localStorage.getItem('epyalink_token') || '',
+    role: localStorage.getItem('epyalink_role') || '',
+    name: localStorage.getItem('epyalink_name') || '',
+    cat: null
+  };
+
+  const $ = id => document.getElementById(id);
+  const esc = s => String(s ?? '').replace(/[&<>'"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]));
+
+  async function api(path, opts = {}) {
+    opts.headers = { ...(opts.headers || {}), 'Content-Type': 'application/json' };
+    if (S.token) opts.headers.Authorization = 'Bearer ' + S.token;
+    const r = await fetch(path, opts);
+    let d = {};
+    try { d = await r.json(); } catch {}
+    if (!r.ok) throw Error(d.detail || d.message || `Erro ${r.status}`);
+    return d;
+  }
+
+  function authMode(m) {
+    $('recoveryBox').classList.add('hidden');$('loginForm').classList.toggle('hidden', m !== 'login');
+    $('registerForm').classList.toggle('hidden', m !== 'register');$('authMsg').innerHTML = '';
+    if (m === 'register') roleFields();
+  }
+
+  function togglePassword(id, btn) {
+    const el = $(id);
+    if (!el) return;
+    el.type = el.type === 'password' ? 'text' : 'password';
+    btn.textContent = el.type === 'password' ? '👁' : '🙈';
+  }
+
+  function roleFields() {
+    const r = $('rRole').value;
+    $('sellerFields').classList.toggle('hidden', r !== 'seller');
+    $('companyFields').classList.toggle('hidden', r !== 'transport_company');$('transFields').classList.toggle('hidden', r !== 'private_transporter');
+  }
+
+  $('loginForm').onsubmit = async e => {
+    e.preventDefault();
+    try {
+      const d = await api('/api/auth/login', {
+        method: 'POST',
+        body: JSON.stringify({ phone: $('loginPhone').value, password:$('loginPassword').value })
+      });
+      S.token = d.access_token; S.role = d.role; S.name = d.full_name;
+      localStorage.setItem('epyalink_token', S.token);
+      localStorage.setItem('epyalink_role', S.role);
+      localStorage.setItem('epyalink_name', S.name);
+      start();
+    } catch (err) {
+      $('authMsg').innerHTML = '<div class="notice error">' + esc(err.message) + '</div>';
+    }
+  };
+
+  $('registerForm').onsubmit = async e => {
+    e.preventDefault();
+    try {
+      await api('/api/auth/register', {
+        method: 'POST',
+        body: JSON.stringify({
+          full_name: $('rName').value,
+          phone: $('rPhone').value,
+          password: $('rPass').value,
+          role: $('rRole').value,
+          province: $('rProvince').value,
+          address: $('rAddress').value
+        })
+      });
+      authMode('login');
+      $('authMsg').innerHTML = '<div class="notice ok">Conta criada com sucesso! Faça login.</div>';
+    } catch (err) {
+      $('authMsg').innerHTML = '<div class="notice error">' + esc(err.message) + '</div>';
+    }
+  };
+
+  function openRecovery() {
+    $('loginForm').classList.add('hidden');
+    $('registerForm').classList.add('hidden');$('recoveryBox').classList.remove('hidden');
+  }
+
+  function closeRecovery() {
+    $('recoveryBox').classList.add('hidden');$('loginForm').classList.remove('hidden');
+  }
+
+  async function requestRecovery() {
+    try {
+      const d = await api('/api/auth/forgot-password', {
+        method: 'POST',
+        body: JSON.stringify({ phone: $('fpPhone').value })
+      });
+      $('recoveryCodeBox').classList.remove('hidden');
+      alert(d.message || 'Código enviado!');
+    } catch (e) {
+      alert(e.message);
+    }
+  }
+
+  async function resetPassword() {
+    try {
+      await api('/api/auth/reset-password', {
+        method: 'POST',
+        body: JSON.stringify({ phone: $('fpPhone').value, code: $('fpCode').value, new_password:$('fpNew').value })
+      });
+      alert('Palavra-passe alterada com sucesso!');
+      closeRecovery();
+    } catch (e) {
+      alert(e.message);
+    }
+  }
+
+  function start() {
+    $('auth').classList.add('hidden');$('top').classList.remove('hidden');
+    $('main').classList.remove('hidden');$('nav').classList.remove('hidden');
+    loadCategories();
+    loadProducts();
+    loadOrders();
+    loadProfile();
+  }
+
+  function logout() {
+    localStorage.clear();
+    location.reload();
+  }
+
+  function show(id) {
+    document.querySelectorAll('.screen').forEach(x => x.classList.remove('active'));
+    $(id).classList.add('active');
+    if (id === 'market') loadProducts();
+    if (id === 'orders') loadOrders();
+    if (id === 'transport') loadTransporters();
+    if (id === 'profile') loadProfile();
+  }
+
+  async function loadCategories() {
+    try {
+      const rows = await api('/api/categories');
+      $('cats').innerHTML = '<button class="active" onclick="S.cat=null;loadProducts()">Todos</button>' +
+        rows.map(c => `<button onclick="S.cat=${c.id};loadProducts()">${esc(c.name)}</button>`).join('');
+    } catch {}
+  }
+
+  async function loadProducts() {
+    try {
+      let url = '/api/products?q=' + encodeURIComponent($('search').value || '');
+      if (S.cat) url += '&category_id=' + S.cat;
+      const rows = await api(url);
+      $('products').innerHTML = rows.length ? rows.map(p => `
+        <article class="card product">
+          <img src="${esc(p.photo || '/LogoEpyalink.png')}" onerror="this.src='/LogoEpyalink.png'">
+          <div class="row between">
+            <div><h3>${esc(p.name)}</h3><div class="muted">${esc(p.location || '')}</div></div>
+            <span class="price">${Number(p.price_kz).toLocaleString('pt-AO')} Kz</span>
+          </div>
+          <button class="btn full" style="margin-top:10px" onclick="buy(${p.id})">Comprar</button>
+        </article>
+      `).join('') : '<div class="notice">Nenhum produto encontrado.</div>';
+    } catch (err) {
+      $('products').innerHTML = '<div class="notice error">' + esc(err.message) + '</div>';
+    }
+  }
+
+  async function buy(id) {
+    const q = prompt('Quantidade desejada:');
+    if (!q || Number(q) <= 0) return;
+    const address = prompt('Endereço de entrega:');
+    if (!address) return;
+    try {
+      await api('/api/orders', {
+        method: 'POST',
+        body: JSON.stringify({ product_id: id, quantity: Number(q), delivery_address: address })
+      });
+      alert('Pedido criado com sucesso!');
+      show('orders');
+    } catch (e) {
+      alert(e.message);
+    }
+  }
+
+  async function loadOrders() {
+    try {
+      const rows = await api('/api/orders');
+      $('ordersList').innerHTML = rows.length ? rows.map(o => `
+        <article class="card">
+          <div class="row between">
+            <h3>Pedido #${o.id}</h3>
+            <span class="tag">${esc(o.status)}</span>
+          </div>
+          <div class="muted">Total: ${Number(o.total_kz || 0).toLocaleString('pt-AO')} Kz</div>
+        </article>
+      `).join('') : '<div class="notice">Ainda não há pedidos.</div>';
+    } catch (e) {
+      $('ordersList').innerHTML = '<div class="notice error">' + esc(e.message) + '</div>';
+    }
+  }
+
+  async function loadTransporters() {
+    try {
+      const rows = await api('/api/transporters/available');
+      $('transportContent').innerHTML = rows.length ? rows.map(v => `
         <div class="card">
-          <h3>Painel do Produtor</h3>
-          <button class="btn full" onclick="openNewProductModal()">+ Novo Produto</button>
+          <b>${esc(v.full_name || 'Transportador')}</b>
+          <div class="muted">${esc(v.plate || '')} · ${esc(v.model || '')}</div>
+        </div>
+      `).join('') : '<div class="notice">Nenhum transportador disponível.</div>';
+    } catch (e) {
+      $('transportContent').innerHTML = '<div class="notice error">' + esc(e.message) + '</div>';
+    }
+  }
+
+  async function loadChat() {
+    const id = $('chatOrderId').value;
+    if (!id) return;
+    try {
+      const msgs = await api(`/api/chat/${id}`);
+      $('chatSend').classList.remove('hidden');$('chatBox').innerHTML = msgs.length ? msgs.map(m => `
+        <div class="msg ${m.sender_name === S.name ? 'mine' : ''}">
+          <b>${esc(m.sender_name)}</b>
+          <div>${esc(m.message)}</div>
+        </div>
+      `).join('') : '<div class="notice">Sem mensagens.</div>';
+    } catch (e) {
+      $('chatBox').innerHTML = '<div class="notice error">' + esc(e.message) + '</div>';
+    }
+  }
+
+  async function sendChat() {
+    const id = $('chatOrderId').value;
+    const text = $('chatText').value.trim();
+    if (!id || !text) return;
+    try {
+      await api(`/api/chat/${id}`, { method: 'POST', body: JSON.stringify({ message: text }) });
+      $('chatText').value = '';
+      loadChat();
+    } catch (e) { alert(e.message); }
+  }
+
+  async function loadProfile() {
+    try {
+      const user = await api('/api/auth/me');
+      $('profileBox').innerHTML = `
+        <div class="card">
+          <h3>${esc(user.full_name)}</h3>
+          <p class="muted">Telefone: ${esc(user.phone)}</p>
+          <p class="muted">Perfil: ${esc(user.role)}</p>
+          <button class="btn danger full" style="margin-top:10px" onclick="logout()">Sair</button>
         </div>
       `;
+    } catch (e) {
+      $('profileBox').innerHTML = '<div class="notice error">' + esc(e.message) + '</div>';
     }
-    $('profileBox').innerHTML = html;
-  } catch(e) {
-    $('profileBox').innerHTML = '<div class="notice error">Erro ao carregar perfil: ' + esc(e.message) + '</div>';
   }
-}
 
-function openNewProductModal() {
-  $('modalTitle').textContent = 'Cadastrar Novo Produto';$('modalBody').innerHTML = `
-    <div class="field"><label>Nome do Produto</label><input id="pName" required></div>
-    <div class="field"><label>Preço (Kz)</label><input id="pPrice" type="number" required></div>
-    <div class="field"><label>Quantidade</label><input id="pQty" type="number" required></div>
-    <div class="field"><label>Unidade (ex: kg, saco, caixa)</label><input id="pUnit" value="kg" required></div>
-    <div class="field"><label>Localização</label><input id="pLoc" required></div>
-    <div class="field"><label>Descrição</label><textarea id="pDesc"></textarea></div>
-    <button class="btn full" style="margin-top:10px" onclick="saveProduct()">Publicar Produto</button>
-  `;
-  openModal();
-}
+  function openModal() { $('modal').classList.add('open'); }
+  function closeModal() { $('modal').classList.remove('open'); }
+  function aiInsights() { alert('Serviço de IA temporariamente indisponível.'); }
 
-async function saveProduct() {
-  try {
-    await api('/api/products', {
-      method: 'POST',
-      body: JSON.stringify({
-        name: $('pName').value,
-        price_kz: Number($('pPrice').value),
-        quantity: Number($('pQty').value),
-        unit: $('pUnit').value,
-        location: $('pLoc').value,
-        description: $('pDesc').value
-      })
-    });
-    closeModal();
-    alert('Produto cadastrado com sucesso!');
-    loadProducts();
-  } catch(e) {
-    alert(e.message);
-  }
-}
-
-async function aiInsights() {
-  $('modalTitle').textContent = 'Insights Agrícolas - IA';
-  $('modalBody').innerHTML = '<div class="notice">Carregando análises de mercado...</div>';
-  openModal();
-  try {
-    const res = await api('/api/ai/market-insights');
-    $('modalBody').innerHTML = `<p>${esc(res.insights || 'Não há recomendações no momento.')}</p>`;
-  } catch(e) {
-    $('modalBody').innerHTML = `<div class="notice error">Erro ao carregar IA: ${esc(e.message)}</div>`;
-  }
-}
-
-function openModal() { $('modal').classList.add('open'); }
-function closeModal() { $('modal').classList.remove('open'); }
-
-function toggleLangMenu(id) {
-  const el = $(id);
-  if (el) el.classList.toggle('open');
-}
-
-function scopeDotClose() {
-  const el = $('loginLangMenu');
-  if (el) el.classList.remove('open');
-}
-
-// Auto-initialize app if user token exists
-if (S.token) {
-  start();
-} else {
-  renderCaptchas();
-}
+  if (S.token) start();
 </script>
 </body>
 </html>
