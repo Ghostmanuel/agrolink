@@ -91,7 +91,39 @@ async function api(path,opts={}){opts.headers={...(opts.headers||{}), 'Content-T
 const TURNSTILE_WIDGETS={};
 function captchaToken(id){try{return window.turnstile&&TURNSTILE_WIDGETS[id]?turnstile.getResponse(TURNSTILE_WIDGETS[id]):''}catch{return ''}}
 function resetCaptchas(){try{Object.values(TURNSTILE_WIDGETS).forEach(w=>window.turnstile&&turnstile.reset(w))}catch{}}
-async function renderCaptchas(){try{const cfg=await fetch('/api/public-config').then(r=>r.json());const render=()=>{if(!window.turnstile)return setTimeout(render,250);document.querySelectorAll('.cf-turnstile').forEach(el=>{if(el.id&&!TURNSTILE_WIDGETS[el.id])TURNSTILE_WIDGETS[el.id]=turnstile.render(el,{sitekey:cfg.turnstile_site_key,theme:'auto'})})};render()}catch{}}
+
+async function renderCaptchas() {
+  try {
+    const response = await fetch('/api/public-config');
+    if (!response.ok) return;
+    
+    const cfg = await response.json();
+    const siteKey = typeof cfg.turnstile === 'string' 
+      ? cfg.turnstile 
+      : (cfg.turnstile?.sitekey || '');
+
+    if (!siteKey) return;
+
+    const render = () => {
+      const container = $('loginTurnstile');
+      if (window.turnstile && container) {
+        // Limpa o contêiner antes de renderizar para evitar duplicações
+        container.innerHTML = ''; 
+        turnstile.render('#loginTurnstile', { sitekey: siteKey });
+      }
+    };
+
+    // Renderiza diretamente se já carregou ou aguarda o evento
+    if (window.turnstile) {
+      render();
+    } else {
+      window.onloadTurnstileCallback = render;
+    }
+  } catch (e) {
+    console.warn('Erro ao carregar captcha:', e);
+  }
+}
+  
 function authMode(m){$('recoveryBox').classList.add('hidden');$('loginForm').classList.toggle('hidden',m!=='login');$('registerForm').classList.toggle('hidden',m!=='register');$('authMsg').innerHTML='';if(m==='register')roleFields()}
 function togglePassword(id,btn){const el=$(id);if(!el)return;el.type=el.type==='password'?'text':'password';btn.textContent=el.type==='password'?'👁':'🙈';}
 function roleFields(){const r=$('rRole').value;const seller=r==='seller';const company=r==='transport_company';const privateT=r==='private_transporter'||r==='transporter';$('sellerFields').classList.toggle('hidden',!seller);$('companyFields').classList.toggle('hidden',!company);$('transFields').classList.toggle('hidden',!privateT);$('rCompany').required=false;$('rFarm').required=false;$('rTransportCompany').required=company;$('rBI').required=privateT;}
