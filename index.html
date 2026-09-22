@@ -229,7 +229,7 @@ function showInfo(k){openModal();$('modalTitle').textContent=k;$('modalBody').in
 function accountMenu() {
   if ($('modalTitle'))$('modalTitle').textContent = 'Conta e Definições';
   if ($('modalBody')) {$('modalBody').innerHTML = `<div class="card" style="display: flex; flex-direction: column; gap: 8px;">
-      <button class="btn secondary full" onclick="show('settings'); closeModal('#modal');">Definições</button>
+      <button class="btn secondary full" onclick="show('settings'); closeModal('#modal');"> ⚙️ Definições</button>
       <button class="btn secondary full" onclick="showInfo('Quem somos');">Quem somos</button>
       <button class="btn secondary full" onclick="showInfo('Ajuda e suporte');">Ajuda e suporte</button>
       <button class="btn danger full" style="margin-top: 8px;" onclick="logout();">Sair da conta</button>
