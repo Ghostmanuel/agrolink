@@ -145,8 +145,8 @@ async function loadProfile() {
       <p class="muted">${esc(u.phone)} · ${esc(roleLabel(u.role))}</p>
       <p>${esc(u.province || '')} · ${esc(u.address || '')}</p>
     </div>`;
-    if (S.role === 'seller') sellerPanel();
-    if (S.role === 'admin') adminPanel();
+    if (S.role === 'seller' && typeof sellerPanel === 'function'){ sellerPanel();}
+    if (S.role === 'admin' && typeof adminPanel === 'functio'){ adminPanel();}
   } catch (e) {
     $('profileBox').innerHTML = '<div class="notice error">' + esc(e.message) + '</div>';
   }
