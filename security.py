@@ -51,7 +51,7 @@ def reset_code():
 def encrypt_sensitive(value):
     if value is None or value == "":
         return None
-    key = base64.urlsafe_b64decode(BI_ENCRYPTION_KEY + "=" * (-len(BI_ENCRYPTION_KEY) % 4))
+    key = base64.urlsafe_b64decode(BI_ENCRYPTION_KEY.encode())
     nonce = secrets.token_bytes(12)
     ciphertext = AESGCM(key).encrypt(nonce, value.encode(), None)
     return "AESGCM1:" + base64.urlsafe_b64encode(nonce + ciphertext).decode()
@@ -61,6 +61,6 @@ def decrypt_sensitive(value):
         return None
     try:
         raw = base64.urlsafe_b64decode(value.split(":",1)[1].encode())
-        return AESGCM(base64.urlsafe_b64decode(BI_ENCRYPTION_KEY + "=" * (-len(BI_ENCRYPTION_KEY) % 4))).decrypt(raw[:12], raw[12:], None).decode()
+        return AESGCM(base64.urlsafe_b64decode(BI_ENCRYPTION_KEY.encode())).decrypt(raw[:12], raw[12:], None).decode()
     except Exception:
         return None

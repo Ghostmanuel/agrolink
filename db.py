@@ -25,7 +25,7 @@ CREATE TABLE IF NOT EXISTS commissions(id INTEGER PRIMARY KEY AUTOINCREMENT,orde
 CREATE TABLE IF NOT EXISTS notifications(id INTEGER PRIMARY KEY AUTOINCREMENT,user_id INTEGER,title TEXT,body TEXT,read_at TEXT,created_at TEXT DEFAULT CURRENT_TIMESTAMP);
 CREATE TABLE IF NOT EXISTS audit_logs(id INTEGER PRIMARY KEY AUTOINCREMENT,actor_id INTEGER,action TEXT,entity_type TEXT,entity_id INTEGER,metadata TEXT,created_at TEXT DEFAULT CURRENT_TIMESTAMP);
 CREATE TABLE IF NOT EXISTS sync_queue(id INTEGER PRIMARY KEY AUTOINCREMENT,user_id INTEGER,device_id TEXT,event_type TEXT,payload TEXT,synced INTEGER DEFAULT 0,created_at TEXT DEFAULT CURRENT_TIMESTAMP);
-CREATE TABLE IF NOT EXISTS password_reset_tokens(id INTEGER PRIMARY KEY AUTOINCREMENT,user_id INTEGER NOT NULL,token_hash TEXT NOT NULL,expires_at TEXT NOT NULL,used_at TEXT,attempts INTEGER DEFAULT 0,provider TEXT DEFAULT 'local',created_at TEXT DEFAULT CURRENT_TIMESTAMP,FOREIGN KEY(user_id) REFERENCES users(id));
+CREATE TABLE IF NOT EXISTS password_reset_tokens(id INTEGER PRIMARY KEY AUTOINCREMENT,user_id INTEGER NOT NULL,token_hash TEXT NOT NULL,expires_at TEXT NOT NULL,used_at TEXT,attempts INTEGER DEFAULT 0,created_at TEXT DEFAULT CURRENT_TIMESTAMP,FOREIGN KEY(user_id) REFERENCES users(id));
 CREATE TABLE IF NOT EXISTS stored_files(id TEXT PRIMARY KEY,owner_id INTEGER,entity_type TEXT,entity_id INTEGER,filename TEXT,content_type TEXT,size_bytes INTEGER,storage_key TEXT NOT NULL,private INTEGER DEFAULT 1,created_at TEXT DEFAULT CURRENT_TIMESTAMP,FOREIGN KEY(owner_id) REFERENCES users(id));
 CREATE TABLE IF NOT EXISTS settlements(id INTEGER PRIMARY KEY AUTOINCREMENT,order_id INTEGER NOT NULL,beneficiary_user_id INTEGER NOT NULL,beneficiary_type TEXT NOT NULL,gross_amount_kz REAL NOT NULL,commission_kz REAL NOT NULL,net_amount_kz REAL NOT NULL,status TEXT DEFAULT 'PENDING',payment_reference TEXT,paid_at TEXT,created_at TEXT DEFAULT CURRENT_TIMESTAMP,UNIQUE(order_id,beneficiary_type),FOREIGN KEY(order_id) REFERENCES orders(id),FOREIGN KEY(beneficiary_user_id) REFERENCES users(id));
 CREATE TABLE IF NOT EXISTS app_settings(key TEXT PRIMARY KEY,value TEXT NOT NULL,updated_at TEXT DEFAULT CURRENT_TIMESTAMP);
@@ -96,9 +96,7 @@ def init_db():
         "beneficiary_type":"TEXT", "rate":"REAL", "base_amount_kz":"REAL", "commission_kz":"REAL",
         "created_at":"TEXT DEFAULT CURRENT_TIMESTAMP"
     })
-    _ensure_columns(c, "password_reset_tokens", {"provider":"TEXT DEFAULT 'local'"})
     c.execute("CREATE INDEX IF NOT EXISTS idx_reset_tokens_user ON password_reset_tokens(user_id)")
-    c.execute("CREATE INDEX IF NOT EXISTS idx_reset_tokens_created ON password_reset_tokens(created_at)")
     c.execute("CREATE INDEX IF NOT EXISTS idx_orders_buyer ON orders(buyer_id)")
     c.execute("CREATE INDEX IF NOT EXISTS idx_orders_seller ON orders(seller_id)")
     c.execute("CREATE INDEX IF NOT EXISTS idx_favorites_user ON favorites(user_id)")
