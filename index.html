@@ -227,16 +227,16 @@ const AL_INFO={
 };
 function showInfo(k){openModal();$('modalTitle').textContent=k;$('modalBody').innerHTML='<div class="card"><p style="white-space:pre-line">'+esc(AL_INFO[k])+'</p></div><div class="muted">© Nuvem JV – Prestação de Serviços e Tecnologias de Informação, Limitada. Todos os direitos reservados.</div>'}
 function accountMenu() {
-  const box = $('accountMenu') || $('#accountMenu') \vert{}\vert{} $('dot-menu');
-  if (box) {
-    box.innerHTML = `<div class="card">
-      <button class="btn secondary full" onclick="show('settings'); closeModal('#accountMenu');">⚙️ Definições</button>
+  if ($('modalTitle'))$('modalTitle').textContent = 'Conta e Definições';
+  if ($('modalBody')) {$('modalBody').innerHTML = `<div class="card" style="display: flex; flex-direction: column; gap: 8px;">
+      <button class="btn secondary full" onclick="show('settings'); closeModal('#modal');">Definições</button>
       <button class="btn secondary full" onclick="showInfo('Quem somos');">Quem somos</button>
       <button class="btn secondary full" onclick="showInfo('Ajuda e suporte');">Ajuda e suporte</button>
-      <button class="btn danger full" onclick="logout();">Sair da conta</button>
+      <button class="btn danger full" style="margin-top: 8px;" onclick="logout();">Sair da conta</button>
     </div>`;
   }
-  openModal('#accountMenu');
+
+  openModal('#modal');
 }
   
   
