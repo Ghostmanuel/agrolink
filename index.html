@@ -472,19 +472,32 @@ adminPanel=async function(){$('adminPanel').classList.remove('hidden');try{const
     if(window._epyalinkObserver)window._epyalinkObserver.disconnect();
     window._epyalinkObserver=new MutationObserver(muts=>{
       for(const m of muts){
+        if(m.type==='characterData'){
+          const p=m.target.parentElement;
+          if(p)translateText(p);
+          continue;
+        }
         for(const n of m.addedNodes){
           if(n.nodeType===1){translateText(n);translateAttrs(n)}
           else if(n.nodeType===3){translateText(n.parentElement||document.body)}
         }
       }
     });
-    window._epyalinkObserver.observe(document.body,{childList:true,subtree:true});
+    window._epyalinkObserver.observe(document.body,{childList:true,subtree:true,characterData:true});
+    setTimeout(()=>{translateText(document.body);translateAttrs(document.body)},0);
+    setTimeout(()=>{translateText(document.body);translateAttrs(document.body)},120);
   }
   window.setLanguage=function(k){
     if(!LANGS[k])return;
     lang=k;localStorage.setItem(KEY,k);
     renderAll();
-    document.querySelectorAll('.lang-panel').forEach(x=>x.classList.remove('open'));
+    document.querySelectorAll('.lang-panel').forEach(x=>{
+      x.classList.remove('open');
+      x.style.display='none';
+      x.style.pointerEvents='none';
+    });
+    document.querySelectorAll('.lang-toggle').forEach(btn=>btn.setAttribute('aria-expanded','false'));
+    setTimeout(()=>{translateText(document.body);translateAttrs(document.body)},0);
   };
   // API única do sistema de idiomas. Não existem versões paralelas do tradutor.
   window.epyaT=t;
