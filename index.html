@@ -271,7 +271,7 @@ function accountMenu() {
 }
 async function settingsPanel() {
   if ($('#modalTitle')) $('#modalTitle').textContent = 'Definições';
-  const options = Object.entries(window.epyalanguages || {}).map(([k, v]) => <option value="${esc(k)}" ${k === (localStorage.getItem('epyalink_lang') \vert{}\vert{} 'pt') ? 'selected' : ''}>${esc(v)}</option>).join('');
+  const options = Object.entries(window.epyalanguages || {}).map(([k, v]) => <option value="${esc(k)}" ${k === (localStorage.getItem('epyalink_lang') || 'pt') ? 'selected' : ''}>${esc(v)}</option>).join('');
   let html = `<div class="card"><h3>Idioma</h3><p class="muted">O idioma da aplicação é alterado apenas aqui.</p><div class="field"><label>Selecionar idioma</label><select id="langSelect" onchange="changeLang(this.value)">${options}</select></div></div>;
   
   if (S.role === 'admin') {
