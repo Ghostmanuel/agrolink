@@ -123,6 +123,37 @@ async function confirmDelivery(did,oid){const code=$('code'+oid).value;if(!/^\d{
 async function openChat(id){closeModal();$('chatOrderId').value=id;show('chatScreen');loadChat()}
 async function loadChat(){const id=$('chatOrderId').value;if(!id)return;try{const rows=await api(`/api/orders/${id}/chat`);$('chatBox').innerHTML=rows.map(m=>`<div class="msg ${m.sender_id?'':''}"><b>${esc(m.sender_name)}</b><br>${esc(m.body)}</div>`).join('')||'<div class="muted">Sem mensagens.</div>';$('chatSend').classList.remove('hidden')}catch(e){alert(e.message)}}
 async function sendChat(){const id=$('chatOrderId').value,body=$('chatText').value;if(!body)return;try{await api(`/api/orders/${id}/chat`,{method:'POST',body:JSON.stringify({body})});$('chatText').value='';loadChat()}catch(e){alert(e.message)}}
+// DECLARAÇÃO DA FUNÇÃO QUE FALTAVA
+function roleLabel(r) {
+  const map = {
+    buyer: 'Comprador',
+    seller: 'Produtor / Vendedor',
+    private_transporter: 'Transportador Particular',
+    transport_company: 'Empresa Transportadora',
+    admin: 'Administrador'
+  };
+  return map[r] || r || '';
+}
+
+// AGORA A CHAMADA FUNCIONARÁ SEM ERROS
+async function loadProfile() {
+  try {
+    const u = await api('/api/me');
+    S.uid = u.id;
+    $('profileBox').innerHTML = `<div class="card">
+      <h3>${esc(u.full_name)}</h3>
+      <p class="muted">${esc(u.phone)} · ${esc(roleLabel(u.role))}</p>
+      <p>${esc(u.province || '')} · ${esc(u.address || '')}</p>
+    </div>`;
+    if (S.role === 'seller') sellerPanel();
+    if (S.role === 'admin') adminPanel();
+  } catch (e) {
+    $('profileBox').innerHTML = '<div class="notice error">' + esc(e.message) + '</div>';
+  }
+}
+
+
+  
 async function loadProfile(){try{const u=await api('/api/me');$('profileBox').innerHTML=`<div class="card"><h3>${esc(u.full_name)}</h3><p class="muted">${esc(u.phone)} · ${esc(roleLabel(u.role))}</p><p>${esc(u.province)} · ${esc(u.address)}</p>${u.producer?`<span class="tag">${esc(u.producer.company_name||u.producer.farm_name||'Produtor')}</span>`:''}</div>`;if(S.role==='seller')sellerPanel();if(((S.role==='transporter'||S.role==='private_transporter'||S.role==='transport_company')||S.role==='private_transporter'||S.role==='transport_company'))loadTransporters();if(S.role==='admin')adminPanel()}catch(e){$('profileBox').innerHTML='<div class="notice error">'+esc(e.message)+'</div>'}}
 async function sellerPanel(){$('sellerPanel').classList.remove('hidden');$('sellerPanel').innerHTML=`<div class="card"><h3>Publicar produto</h3><div class="field"><label>Nome</label><input id="pName"></div><div class="field"><label>Categoria</label><select id="pCat"></select></div><div class="grid"><div class="field"><label>Preço Kz</label><input id="pPrice" type="number"></div><div class="field"><label>Quantidade</label><input id="pQty" type="number"></div></div><div class="field"><label>Unidade</label><input id="pUnit" value="kg"></div><div class="field"><label>Localização</label><input id="pLoc"></div><div class="field"><label>Foto (URL opcional)</label><input id="pPhoto"></div><div class="field"><label>Descrição</label><textarea id="pDesc"></textarea></div><button class="btn full" onclick="publish()">Publicar</button></div>`;const cs=await api('/api/categories');$('pCat').innerHTML='<option value="">Sem categoria</option>'+cs.map(c=>`<option value="${c.id}">${esc(c.name)}</option>`).join('')}
 async function adminPanel(){$('adminPanel').classList.remove('hidden');try{const d=await api('/api/admin/dashboard');const cards=Object.entries(d).map(([k,v])=>`<div><span class="muted">${esc(adminT(k))}</span><div class="stat">${typeof v==='number'?Number(v).toLocaleString('pt-AO'):esc(adminValue(k,v))}</div></div>`).join('');$('adminPanel').innerHTML=`<div class="card"><h3>${esc(adminT('admin'))}</h3><div class="grid">${cards}</div></div><div class="tabs"><button onclick="adminList('users')">${adminT('users')}</button><button onclick="adminList('producers')">${adminT('producers')}</button><button onclick="adminList('transporters')">${adminT('transporters')}</button><button onclick="adminList('vehicles')">${adminT('vehicles')}</button><button onclick="adminList('products')">${adminT('products')}</button><button onclick="adminList('orders')">${adminT('orders')}</button><button onclick="adminList('payments')">${adminT('payments')}</button><button onclick="adminList('commissions')">${adminT('commissions')}</button></div><div id="adminListBox"></div><div class="card"><h3>${t('Liquidação')}</h3><div class="field"><label>${t('ID do pedido')}</label><input id="releaseId" type="number"></div><button class="btn full" onclick="releaseOrder()">${t('Liberar liquidação')}</button></div>`}catch(e){$('adminPanel').innerHTML='<div class="notice error">'+esc(e.message)+'</div>'}}
