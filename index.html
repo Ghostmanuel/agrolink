@@ -161,20 +161,30 @@ async function adminPanel(){$('adminPanel').classList.remove('hidden');try{const
 function adminT(k) {
   const map = {
     // Tipos de listas (kind)
+    unction adminT(k) {
+  const map = {
+    // Estatísticas e Módulos
     users: 'Utilizadores',
+    producers: 'Produtores / Vendedores',
     sellers: 'Produtores / Vendedores',
+    transporters: 'Transportadores',
+    vehicles: 'Veículos',
     products: 'Produtos',
     orders: 'Pedidos',
-    transports: 'Transportes',
-    logs: 'Registos do Sistema',
+    payments: 'Pagamentos',
+    commissions: 'Comissões',
+    notifications: 'Notificações',
+    settlements: 'Liquidações',
+    sales_this_month: 'Vendas deste Mês',
+    active_transports: 'Transportes Ativos',
     
-    // Propriedades/Campos das tabelas (k)
+    // Campos/Propriedades comuns de tabelas
     id: 'ID',
     full_name: 'Nome Completo',
     phone: 'Telefone',
     role: 'Função',
     status: 'Estado',
-    created_at: 'Data de Registo',
+    created_at: 'Data de Criação',
     price: 'Preço',
     title: 'Título',
     total: 'Total'
