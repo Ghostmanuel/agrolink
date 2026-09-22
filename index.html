@@ -157,6 +157,45 @@ async function loadProfile() {
 async function loadProfile(){try{const u=await api('/api/me');$('profileBox').innerHTML=`<div class="card"><h3>${esc(u.full_name)}</h3><p class="muted">${esc(u.phone)} · ${esc(roleLabel(u.role))}</p><p>${esc(u.province)} · ${esc(u.address)}</p>${u.producer?`<span class="tag">${esc(u.producer.company_name||u.producer.farm_name||'Produtor')}</span>`:''}</div>`;if(S.role==='seller')sellerPanel();if(((S.role==='transporter'||S.role==='private_transporter'||S.role==='transport_company')||S.role==='private_transporter'||S.role==='transport_company'))loadTransporters();if(S.role==='admin')adminPanel()}catch(e){$('profileBox').innerHTML='<div class="notice error">'+esc(e.message)+'</div>'}}
 async function sellerPanel(){$('sellerPanel').classList.remove('hidden');$('sellerPanel').innerHTML=`<div class="card"><h3>Publicar produto</h3><div class="field"><label>Nome</label><input id="pName"></div><div class="field"><label>Categoria</label><select id="pCat"></select></div><div class="grid"><div class="field"><label>Preço Kz</label><input id="pPrice" type="number"></div><div class="field"><label>Quantidade</label><input id="pQty" type="number"></div></div><div class="field"><label>Unidade</label><input id="pUnit" value="kg"></div><div class="field"><label>Localização</label><input id="pLoc"></div><div class="field"><label>Foto (URL opcional)</label><input id="pPhoto"></div><div class="field"><label>Descrição</label><textarea id="pDesc"></textarea></div><button class="btn full" onclick="publish()">Publicar</button></div>`;const cs=await api('/api/categories');$('pCat').innerHTML='<option value="">Sem categoria</option>'+cs.map(c=>`<option value="${c.id}">${esc(c.name)}</option>`).join('')}
 async function adminPanel(){$('adminPanel').classList.remove('hidden');try{const d=await api('/api/admin/dashboard');const cards=Object.entries(d).map(([k,v])=>`<div><span class="muted">${esc(adminT(k))}</span><div class="stat">${typeof v==='number'?Number(v).toLocaleString('pt-AO'):esc(adminValue(k,v))}</div></div>`).join('');$('adminPanel').innerHTML=`<div class="card"><h3>${esc(adminT('admin'))}</h3><div class="grid">${cards}</div></div><div class="tabs"><button onclick="adminList('users')">${adminT('users')}</button><button onclick="adminList('producers')">${adminT('producers')}</button><button onclick="adminList('transporters')">${adminT('transporters')}</button><button onclick="adminList('vehicles')">${adminT('vehicles')}</button><button onclick="adminList('products')">${adminT('products')}</button><button onclick="adminList('orders')">${adminT('orders')}</button><button onclick="adminList('payments')">${adminT('payments')}</button><button onclick="adminList('commissions')">${adminT('commissions')}</button></div><div id="adminListBox"></div><div class="card"><h3>${t('Liquidação')}</h3><div class="field"><label>${t('ID do pedido')}</label><input id="releaseId" type="number"></div><button class="btn full" onclick="releaseOrder()">${t('Liberar liquidação')}</button></div>`}catch(e){$('adminPanel').innerHTML='<div class="notice error">'+esc(e.message)+'</div>'}}
+// 1. Função de tradução/etiquetagem das chaves do Painel
+function adminT(k) {
+  const map = {
+    // Tipos de listas (kind)
+    users: 'Utilizadores',
+    sellers: 'Produtores / Vendedores',
+    products: 'Produtos',
+    orders: 'Pedidos',
+    transports: 'Transportes',
+    logs: 'Registos do Sistema',
+    
+    // Propriedades/Campos das tabelas (k)
+    id: 'ID',
+    full_name: 'Nome Completo',
+    phone: 'Telefone',
+    role: 'Função',
+    status: 'Estado',
+    created_at: 'Data de Registo',
+    price: 'Preço',
+    title: 'Título',
+    total: 'Total'
+  };
+  return map[k] || k || '';
+}
+
+// 2. Função de formatação de valores
+function adminValue(k, v) {
+  if (v === null || v === undefined) return '-';
+  if (typeof v === 'boolean') return v ? 'Sim' : 'Não';
+  if (typeof v === 'object') return JSON.stringify(v);
+  return String(v);
+}
+
+// 3. Função de tradução genérica (caso não exista no seu projeto)
+if (typeof window.t !== 'function') {
+  window.t = function(str) { return str; };
+}
+  
+  
 async function adminList(kind){try{const rows=await api('/api/admin/'+kind);const title=adminT(kind);$('adminListBox').innerHTML=`<div class="card"><h3>${esc(title)}</h3>${rows.slice(0,50).map(r=>`<div class="admin-row"><div class="grid">${Object.entries(r).map(([k,v])=>`<div><span class="muted">${esc(adminT(k))}</span><div>${esc(adminValue(k,v))}</div></div>`).join('')}</div></div>`).join('')||`<div class="muted">${t('Sem dados.')}</div>`}</div>`}catch(e){alert(e.message)}}
 async function releaseOrder(){try{const id=$('releaseId').value;const d=await api(`/api/admin/orders/${id}/release`,{method:'POST'});alert('Liquidação registada: '+JSON.stringify(d));adminPanel()}catch(e){alert(e.message)}}
 async function aiInsights(){try{const o=await api('/api/orders');const p=await api('/api/products');openModal();$('modalTitle').textContent='EPYALINK Insights';$('modalBody').innerHTML=`<div class="card"><b>Produtos no mercado:</b> ${p.length}</div><div class="card"><b>Pedidos visíveis:</b> ${o.length}</div><p class="muted">Insights nesta versão são regras internas do EPYALINK. Uma futura integração LLM pode ampliar recomendações e análise comercial.</p>`}catch(e){alert(e.message)}}
