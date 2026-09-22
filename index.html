@@ -25,7 +25,7 @@
 .auth-card{width:min(440px,calc(100% - 26px));padding:20px 20px 17px;border-radius:26px;background:rgba(255,255,255,.94);box-shadow:0 24px 70px rgba(0,0,0,.32)}
 .auth-logo{width:122px;height:92px;object-fit:contain;margin:-4px auto 2px}
 .auth-title{font-size:28px;letter-spacing:-.5px}.auth-sub{font-size:13px}
-.lang-picker{position:absolute;right:14px;top:14px;z-index:5}.lang-toggle{position:relative;z-index:10000;pointer-events:auto;border:1px solid rgba(255,255,255,.8);background:rgba(255,255,255,.9);color:#154a2a;border-radius:999px;padding:9px 12px;font-weight:800;box-shadow:0 8px 20px #0002;cursor:pointer}.lang-panel{display:none;pointer-events:none;position:absolute;right:0;top:48px;width:260px;background:#fff;border:1px solid var(--line);border-radius:16px;padding:8px;box-shadow:0 16px 38px #0003}.lang-panel.open{display:block;pointer-events:auto;z-index:99999}.lang-panel button{display:flex;width:100%;gap:9px;align-items:center;border:0;background:#fff;border-radius:10px;padding:10px;text-align:left;font:inherit;cursor:pointer}.lang-panel button:hover,.lang-panel button.active{background:#edf6ed}.lang-panel small{display:block;color:var(--muted);padding:7px 10px 3px}.lang-status{font-size:11px;color:var(--muted);margin:8px 0 0;text-align:center}
+.lang-picker{position:absolute;right:14px;top:14px;z-index:5}.lang-toggle{position:relative;z-index:10000;pointer-events:auto;border:1px solid rgba(255,255,255,.8);background:rgba(255,255,255,.9);color:#154a2a;border-radius:999px;padding:9px 12px;font-weight:800;box-shadow:0 8px 20px #0002;cursor:pointer}.lang-panel{display:none;pointer-events:none;position:absolute;right:0;top:48px;width:260px;background:#fff;border:1px solid var(--line);border-radius:16px;padding:8px;box-shadow:0 16px 38px #0003}.lang-panel.open{display:block!important;pointer-events:auto!important;z-index:99999!important}.lang-panel button{display:flex;width:100%;gap:9px;align-items:center;border:0;background:#fff;border-radius:10px;padding:10px;text-align:left;font:inherit;cursor:pointer}.lang-panel button:hover,.lang-panel button.active{background:#edf6ed}.lang-panel small{display:block;color:var(--muted);padding:7px 10px 3px}.lang-status{font-size:11px;color:var(--muted);margin:8px 0 0;text-align:center}
 .brand-copy{min-width:0}.brand-copy b,.brand-copy small{display:block;white-space:nowrap}.app-lang{margin-left:auto;position:relative;z-index:92}.app-lang .lang-panel{top:42px}.scope-dots{position:relative;z-index:93;flex:0 0 auto;min-width:44px;min-height:44px;padding:5px 9px;font-size:25px;line-height:1;border-radius:12px}.hamburger-menu{font-family:Arial,sans-serif;font-weight:700;letter-spacing:-2px}.brand .lang-toggle{background:#fff;padding:7px 10px}
 .smart-translation{display:flex;gap:8px;align-items:center;background:#f0f7ed;border:1px solid #d9e8d2;padding:9px 10px;border-radius:12px;font-size:12px;margin:8px 0}.smart-translation button{margin-left:auto;border:1px solid var(--g);background:#fff;color:var(--g);border-radius:9px;padding:6px 8px;font-weight:700}
 @media(max-width:620px){.lang-picker{top:10px;right:10px}.lang-toggle{padding:8px 10px}.auth-card{margin:40px auto 20px}.auth-logo{height:78px;width:110px}.auth-title{font-size:25px}}
@@ -33,7 +33,7 @@
 <body><div id="app">
 <section id="auth" class="screen active auth">
   <div class="lang-picker" id="loginLangPicker">
-    <button class="lang-toggle" type="button" onclick="toggleLangMenu('loginLangMenu')">🌐 <span id="loginLangLabel">Português</span>⌄</button>
+    <button class="lang-toggle" type="button" onclick="toggleLangMenu('loginLangMenu')" aria-haspopup="true" aria-expanded="false">🌐 <span id="loginLangLabel">Português</span>⌄</button>
     <div class="lang-panel" id="loginLangMenu"></div>
   </div>
   <div class="auth-card">
@@ -152,8 +152,9 @@ const AL_INFO={
 };
 function showInfo(k){openModal();$('modalTitle').textContent=k;$('modalBody').innerHTML='<div class="card"><p style="white-space:pre-line">'+esc(AL_INFO[k])+'</p></div><div class="muted">© Nuvem JM – Prestação de Serviços e Tecnologias de Informação, Limitada. Todos os direitos reservados.</div>'}
 function accountMenu(){
-  const items=Object.keys(AL_INFO).map(k=>`<button class="btn secondary full" style="margin:4px 0;text-align:left" onclick="showInfo('${k.replace(/'/g,"\\'")}')">${esc(k)}</button>`).join('');
-  $('accountMenu').innerHTML='<div class="card"><h3>Informações e suporte</h3>'+items+'</div><div class="card"><h3>Configurações</h3><button class="btn secondary full" onclick="settingsPanel()">Abrir configurações</button></div>';
+  // O Perfil não contém conteúdo institucional nem suporte.
+  // Essas informações existem exclusivamente no menu ☰.
+  if($('accountMenu')) $('accountMenu').innerHTML='';
 }
 async function settingsPanel(){openModal();$('modalTitle').textContent='Configurações';try{const rows=await api('/api/admin/settings');if(S.role!=='admin'){throw new Error('As configurações administrativas são exclusivas do administrador.')}$('modalBody').innerHTML='<div class="card">'+rows.map(r=>`<div class="field"><label>${esc(r.key)}</label><input id="set_${esc(r.key)}" value="${esc(r.value)}"><button class="btn secondary full" style="margin-top:5px" onclick="saveSetting('${esc(r.key)}')">Guardar</button></div>`).join('')+'</div>'}catch(e){$('modalBody').innerHTML='<div class="notice">Perfil e segurança pessoais devem ser geridos pelo utilizador. <br><br><b>Admin:</b> configurações operacionais estão disponíveis no painel administrativo.</div><button class="btn full" onclick="closeModal()">Fechar</button>'}}
 function downloadReport(){const blob=new Blob([JSON.stringify(window._agroReport||{},null,2)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='agrolink-relatorio.json';a.click();URL.revokeObjectURL(a.href)}
@@ -167,7 +168,6 @@ async function sendChat(){try{const id=$('chatOrderId').value,body=$('chatText')
 loadChat=async function(){const id=$('chatOrderId').value;if(!id)return;try{const rows=await api(`/api/orders/${id}/chat`);$('chatBox').innerHTML=rows.map(m=>`<div class="msg"><b>${esc(m.sender_name)}</b><br>${esc(m.body||'')}${m.attachment_url?`<div style="margin-top:7px"><a href="${esc(m.attachment_url)}" target="_blank">📷 Ver fotografia</a></div>`:''}</div>`).join('')||'<div class="muted">Sem mensagens.</div>';$('chatSend').classList.remove('hidden')}catch(e){alert(e.message)}}
 adminPanel=async function(){$('adminPanel').classList.remove('hidden');try{const d=await api('/api/admin/dashboard');$('adminPanel').innerHTML=`<div class="card"><h3>${esc(adminT('admin'))}</h3><div class="grid">${Object.entries(d).map(([k,v])=>`<div><span class="muted">${esc(adminT(k))}</span><div class="stat">${typeof v==='number'?Number(v).toLocaleString('pt-AO'):esc(adminValue(k,v))}</div></div>`).join('')}</div></div><div class="tabs"><button type="button" onclick="adminList('users')">${adminT('users')}</button><button type="button" onclick="adminList('producers')">${adminT('producers')}</button><button type="button" onclick="adminList('transporters')">${adminT('transporters')}</button><button type="button" onclick="adminList('vehicles')">${adminT('vehicles')}</button><button type="button" onclick="adminList('products')">${adminT('products')}</button><button type="button" onclick="adminList('orders')">${adminT('orders')}</button><button type="button" onclick="adminList('payments')">${adminT('payments')}</button><button type="button" onclick="adminList('commissions')">${adminT('commissions')}</button><button type="button" onclick="adminReports()">${adminT('Relatórios')}</button><button type="button" onclick="adminAudit()">${adminT('Auditoria')}</button><button type="button" onclick="settingsPanel()">${adminT('Configurações')}</button></div><div id="adminListBox"></div><div class="card"><h3>${esc(adminT('Liquidação'))}</h3><div class="field"><label>${esc(adminT('ID do pedido'))}</label><input id="releaseId" type="number"></div><button class="btn full" type="button" onclick="releaseOrder()">${esc(adminT('Liberar liquidação'))}</button></div>`}catch(e){$('adminPanel').innerHTML='<div class="notice error">'+esc(smartTranslate(e.message))+'</div>'}}
 
-if($('accountMenu')) accountMenu();
 /* EPYALINK v16.2.1 — stabilization, cache, consistent header and product publishing UX */
 (function(){
   const style=document.createElement('style');
@@ -460,11 +460,6 @@ if($('accountMenu')) accountMenu();
       b.addEventListener('click',(ev)=>{ev.preventDefault();ev.stopPropagation();window.setLanguage(k);});b.addEventListener('pointerdown',(ev)=>ev.stopPropagation());b.style.pointerEvents='auto';b.style.position='relative';b.style.zIndex='10001';
       el.appendChild(b);
     });
-    const smart=document.createElement('div'); smart.className='smart-translation';
-    const span=document.createElement('span'); span.textContent='✨ '+t('Tradução inteligente de conteúdos');
-    const info=document.createElement('button'); info.type='button'; info.textContent=t('Info');
-    info.addEventListener('click',(ev)=>{ev.preventDefault();ev.stopPropagation();alert(t('A tradução inteligente será ligada ao serviço de tradução configurado pela Nuvem JV.'));});
-    smart.append(span,info); el.appendChild(smart);
   }
   function renderAll(){
     document.documentElement.lang=lang==='pt'?'pt-AO':lang;
@@ -491,13 +486,28 @@ if($('accountMenu')) accountMenu();
     renderAll();
     document.querySelectorAll('.lang-panel').forEach(x=>x.classList.remove('open'));
   };
+  // API única do sistema de idiomas. Não existem versões paralelas do tradutor.
   window.epyaT=t;
   window.epyaLanguages=LANGS;
   window.epyaRenderLanguages=renderAll;
-  window.toggleLangMenu=function(id){const el=document.getElementById(id);if(!el)return;el.classList.toggle('open');el.style.pointerEvents=el.classList.contains('open')?'auto':'none';};
-  window.epyaT=t;
-  window.epyaLanguages=LANGS;
-  window.epyaRenderLanguages=renderAll;
+  window.toggleLangMenu=function(id){
+    const el=document.getElementById(id||'appLangMenu');
+    if(!el)return;
+    const wasOpen=el.classList.contains('open');
+    document.querySelectorAll('.lang-panel').forEach(panel=>{
+      panel.classList.remove('open');
+      panel.style.display='none';
+      panel.style.pointerEvents='none';
+    });
+    if(!wasOpen){
+      el.classList.add('open');
+      el.style.display='block';
+      el.style.pointerEvents='auto';
+      el.style.zIndex='99999';
+      const btn=document.getElementById(el.id==='loginLangMenu'?'loginLangButton':'appLangButton');
+      if(btn)btn.setAttribute('aria-expanded','true');
+    }
+  };
   document.addEventListener('click',e=>{if(!e.target.closest('.lang-picker')&&!e.target.closest('.app-lang'))document.querySelectorAll('.lang-panel').forEach(x=>x.classList.remove('open'))});
   setTimeout(renderAll,50);
 })();
