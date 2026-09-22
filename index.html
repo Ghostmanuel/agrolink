@@ -277,7 +277,7 @@ async function settingsPanel() {
   if (S.role === 'admin') {
     try {
       const rows = await api('/api/admin/settings');
-      html += `<div class="card"><h3>Configurações operacionais</h3>${rows.map(r => `<div class="field"><label>${esc(r.key)}</label><input id="set_${r.key}" value="${esc(r.value)}"><button class="btn" onclick="saveSetting('${r.key}')">Salvar</button></div>`).join('')}</div>`;
+      html += `<div class="card"><h3>Configurações operacionais</h3>${rows.map(r => `<div class="field"><label>${esc(r.key)}</label><input id="set_${r.key}" value="${esc(r.value)}"><button class="btn" onclick="saveSetting('${r.key}')">Salvar</button></div>).join('')}</div>`;
     } catch (e) {
       html += `<div class="card"><p class="notice error">${esc(e.message)}</p></div>`;
     }
