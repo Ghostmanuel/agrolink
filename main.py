@@ -92,7 +92,7 @@ def geocode_address(address):
     if not address: return None
     try:
         q=urllib.parse.urlencode({"q":address+", Angola","format":"json","limit":1})
-        req=urllib.request.Request(f"{GEOCODING_BASE_URL.rstrip('/')}/search?{q}",headers={"User-Agent":"AgroLink-Angola/15.0"})
+        req=urllib.request.Request(f"{GEOCODING_BASE_URL.rstrip('/')}/search?{q}",headers={"User-Agent":"AgroLink-Angola/16.2.1"})
         with urllib.request.urlopen(req,timeout=8) as r: data=json.loads(r.read().decode())
         if data: return float(data[0]["lat"]),float(data[0]["lon"])
     except Exception:
