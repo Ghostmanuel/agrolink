@@ -196,7 +196,13 @@ if (typeof window.t !== 'function') {
 }
   
   
-async function adminList(kind){try{const rows=await api('/api/admin/'+kind);const title=adminT(kind);$('adminListBox').innerHTML=`<div class="card"><h3>${esc(title)}</h3>${rows.slice(0,50).map(r=>`<div class="admin-row"><div class="grid">${Object.entries(r).map(([k,v])=>`<div><span class="muted">${esc(adminT(k))}</span><div>${esc(adminValue(k,v))}</div></div>`).join('')}</div></div>`).join('')||`<div class="muted">${t('Sem dados.')}</div>`}</div>`}catch(e){alert(e.message)}}
+async function adminList(kind){try{const rows=await api('/api/admin/'+kind);const title=adminT(kind);
+const box =$('adminListBox');
+if (!box) return;
+bo.innerHTML=` <div class="card"><h3>${esc(title)}</h3>${rows.slice(0,50).map(r=>`<div class="admin-row">
+<div class="grid">${Object.entries(r).map(([k,v])=>`<div><span class="muted">${esc(adminT(k))}
+</span><div>${esc(adminValue(k,v))}</div></div>`).join('')}
+</div></div>`).join('')||`<div class="muted">${t('Sem dados.')}</div>`}</div>`}catch(e){alert(e.message);}}
 async function releaseOrder(){try{const id=$('releaseId').value;const d=await api(`/api/admin/orders/${id}/release`,{method:'POST'});alert('Liquidação registada: '+JSON.stringify(d));adminPanel()}catch(e){alert(e.message)}}
 async function aiInsights(){try{const o=await api('/api/orders');const p=await api('/api/products');openModal();$('modalTitle').textContent='EPYALINK Insights';$('modalBody').innerHTML=`<div class="card"><b>Produtos no mercado:</b> ${p.length}</div><div class="card"><b>Pedidos visíveis:</b> ${o.length}</div><p class="muted">Insights nesta versão são regras internas do EPYALINK. Uma futura integração LLM pode ampliar recomendações e análise comercial.</p>`}catch(e){alert(e.message)}}
 function openModal(){$('modal').classList.add('open')}function closeModal(){$('modal').classList.remove('open')}
