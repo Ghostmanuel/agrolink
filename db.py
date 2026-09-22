@@ -5,7 +5,15 @@ from config import DATABASE_URL
 def get_db():
     if not DATABASE_URL.startswith("sqlite:///"): raise RuntimeError("DATABASE_URL não-SQLite requer adaptador PostgreSQL")
     p=Path(DATABASE_URL.replace("sqlite:///","",1)); p.parent.mkdir(parents=True,exist_ok=True)
-    c=sqlite3.connect(p); c.row_factory=sqlite3.Row; c.execute("PRAGMA foreign_keys=ON"); return c
+    c=sqlite3.connect(p, timeout=30)
+    c.row_factory=sqlite3.Row
+    c.execute("PRAGMA foreign_keys=ON")
+    c.execute("PRAGMA busy_timeout=30000")
+    try:
+        c.execute("PRAGMA journal_mode=WAL")
+    except sqlite3.DatabaseError:
+        pass
+    return c
 
 SCHEMA="""
 CREATE TABLE IF NOT EXISTS users(id INTEGER PRIMARY KEY AUTOINCREMENT,full_name TEXT NOT NULL,phone TEXT UNIQUE NOT NULL,password_hash TEXT NOT NULL,role TEXT NOT NULL,province TEXT,address TEXT,profile_photo TEXT,bi_number_encrypted TEXT,bi_blind_hash TEXT,status TEXT DEFAULT 'active',created_at TEXT DEFAULT CURRENT_TIMESTAMP);

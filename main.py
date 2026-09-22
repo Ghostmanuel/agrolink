@@ -10,9 +10,15 @@ from schemas import *
 from security import *
 from config import *
 
-app=FastAPI(title=APP_NAME,version="16.2.1")
+app=FastAPI(title=APP_NAME,version=APP_VERSION)
 TOKENS={}
-app.add_middleware(CORSMiddleware,allow_origins=["*"],allow_credentials=True,allow_methods=["*"],allow_headers=["*"])
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=CORS_ALLOW_ORIGINS or ["*"],
+    allow_credentials=False,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 def _client_ip(request:Request):
     return request.headers.get("CF-Connecting-IP") or request.headers.get("X-Forwarded-For", "").split(",")[0].strip() or (request.client.host if request.client else "unknown")
@@ -92,7 +98,7 @@ def geocode_address(address):
     if not address: return None
     try:
         q=urllib.parse.urlencode({"q":address+", Angola","format":"json","limit":1})
-        req=urllib.request.Request(f"{GEOCODING_BASE_URL.rstrip('/')}/search?{q}",headers={"User-Agent":"AgroLink-Angola/16.2.1"})
+        req=urllib.request.Request(f"{GEOCODING_BASE_URL.rstrip('/')}/search?{q}",headers={"User-Agent":"EPYALINK/1.6"})
         with urllib.request.urlopen(req,timeout=8) as r: data=json.loads(r.read().decode())
         if data: return float(data[0]["lat"]),float(data[0]["lon"])
     except Exception:
@@ -102,7 +108,7 @@ def geocode_address(address):
 def road_route(origin_lat,origin_lon,dest_lat,dest_lon):
     try:
         url=_route_url([(origin_lat,origin_lon),(dest_lat,dest_lon)])
-        req=urllib.request.Request(url,headers={"User-Agent":"AgroLink-Angola/15.0"})
+        req=urllib.request.Request(url,headers={"User-Agent":"EPYALINK/1.6"})
         with urllib.request.urlopen(req,timeout=12) as r: data=json.loads(r.read().decode())
         route=(data.get("routes") or [None])[0]
         if route: return round(route["distance"]/1000,2),round(route["duration"]/60)
@@ -440,8 +446,8 @@ def transport_choice(oid:int,x:TransportChoice,u=Depends(auth)):
     db=get_db(); o=order_access(db,oid,u["id"])
     if u["id"] not in (o["buyer_id"],o["seller_id"]): db.close(); raise HTTPException(403,"Apenas comprador ou vendedor")
     if o["status"]!="SELLER_ACCEPTED": db.close(); raise HTTPException(409,"O vendedor ainda não aceitou o pedido")
-    if x.mode=="agrolink":
-        db.execute("UPDATE orders SET transport_mode='agrolink',delivery_status='REQUESTED' WHERE id=?",(oid,)); db.execute("INSERT OR IGNORE INTO deliveries(order_id,status,destination) VALUES(?,?,?)",(oid,"REQUESTED",o["delivery_address"])); notify(db,o["seller_id"] if u["id"]==o["buyer_id"] else o["buyer_id"],"Transporte AgroLink",f"Pedido #{oid} aguarda seleção de transportador.")
+    if x.mode in ("epyalink","agrolink"):
+        db.execute("UPDATE orders SET transport_mode='epyalink',delivery_status='REQUESTED' WHERE id=?",(oid,)); db.execute("INSERT OR IGNORE INTO deliveries(order_id,status,destination) VALUES(?,?,?)",(oid,"REQUESTED",o["delivery_address"])); notify(db,o["seller_id"] if u["id"]==o["buyer_id"] else o["buyer_id"],"Transporte EPYALINK",f"Pedido #{oid} aguarda seleção de transportador.")
     elif x.mode=="buyer":
         db.execute("UPDATE orders SET transport_mode='buyer',delivery_status='NOT_REQUIRED',delivery_distance_km=0,delivery_fee_kz=0,total_kz=product_total_kz WHERE id=?",(oid,)); db.execute("DELETE FROM deliveries WHERE order_id=?",(oid,))
     else:
@@ -456,7 +462,7 @@ def transport_choice(oid:int,x:TransportChoice,u=Depends(auth)):
 @app.post("/api/orders/{oid}/delivery-quote")
 def delivery_quote(oid:int,x:DeliveryQuote,u=Depends(auth)):
     db=get_db(); o=order_access(db,oid,u["id"])
-    if o["transport_mode"]!="agrolink": db.close(); raise HTTPException(409,"A cotação AgroLink só existe quando o comprador escolhe um transportador AgroLink")
+    if o["transport_mode"] not in ("epyalink","agrolink"): db.close(); raise HTTPException(409,"A cotação EPYALINK só existe quando o comprador escolhe um transportador EPYALINK")
     origin_text=x.origin
     if not origin_text:
         origin_row=db.execute("SELECT COALESCE(NULLIF(p.location,''),NULLIF(pr.location,''),u.address) AS origin FROM products p JOIN users u ON u.id=p.seller_id LEFT JOIN producers pr ON pr.user_id=u.id WHERE p.id=?",(o["product_id"],)).fetchone()
@@ -485,7 +491,7 @@ def delivery_quote(oid:int,x:DeliveryQuote,u=Depends(auth)):
     load_factor=max(1.0,cargo_kg/capacity)
     fee=round(base + distance_km*rate*load_factor,2)
     total=recalc_total(db,oid,distance_km,fee); db.execute("UPDATE orders SET delivery_address=? WHERE id=?",(destination_text,oid))
-    if o["transport_mode"]=="agrolink": db.execute("UPDATE deliveries SET origin=?,destination=?,distance_km=?,eta_minutes=? WHERE order_id=?",(origin_text,destination_text,distance_km,eta,oid))
+    if o["transport_mode"] in ("epyalink","agrolink"): db.execute("UPDATE deliveries SET origin=?,destination=?,distance_km=?,eta_minutes=? WHERE order_id=?",(origin_text,destination_text,distance_km,eta,oid))
     audit(db,u["id"],"ROUTE_QUOTED","orders",oid,{"distance_km":distance_km,"eta_minutes":eta,"source":source}); db.commit(); db.close()
     return {"distance_km":distance_km,"eta_minutes":eta,"delivery_fee_kz":fee,"product_total_kz":o["product_total_kz"],"total_kz":total,"source":source,"origin":origin,"destination":destination,"cargo_kg":round(cargo_kg,2),"vehicle_capacity_kg":capacity,"load_factor":round(load_factor,2)}
 
@@ -514,13 +520,13 @@ def my_vehicles(u=Depends(role("transport_company","private_transporter","transp
 def assign_transporter(oid:int,x:AssignTransporter,u=Depends(auth)):
     db=get_db(); o=order_access(db,oid,u["id"])
     if u["id"] not in (o["buyer_id"],o["seller_id"]): db.close(); raise HTTPException(403,"Sem acesso")
-    if o["transport_mode"]!="agrolink": db.close(); raise HTTPException(409,"Transporte AgroLink não foi escolhido")
+    if o["transport_mode"] not in ("epyalink","agrolink"): db.close(); raise HTTPException(409,"Transporte EPYALINK não foi escolhido")
     v=db.execute("SELECT * FROM vehicles WHERE transporter_id=? AND status='FREE' AND id=COALESCE(?,id) ORDER BY id DESC LIMIT 1",(x.transporter_id,x.vehicle_id)).fetchone()
     if not v: db.close(); raise HTTPException(409,"Transportador/veículo indisponível")
     code=delivery_code(); existing=db.execute("SELECT id FROM deliveries WHERE order_id=?",(oid,)).fetchone()
     if existing: db.execute("UPDATE deliveries SET transporter_id=?,vehicle_id=?,origin=?,destination=?,status='REQUESTED' WHERE order_id=?",(x.transporter_id,v["id"],x.origin,o["delivery_address"],oid)); did=existing["id"]
     else: did=db.execute("INSERT INTO deliveries(order_id,transporter_id,vehicle_id,origin,destination,status) VALUES(?,?,?,?,?,?)",(oid,x.transporter_id,v["id"],x.origin,o["delivery_address"],"REQUESTED")).lastrowid
-    db.execute("UPDATE orders SET delivery_status='REQUESTED',delivery_code_hash=? WHERE id=?",(delivery_hash(code),oid)); db.execute("UPDATE vehicles SET status='RESERVED' WHERE id=?",(v["id"],)); notify(db,x.transporter_id,"Nova solicitação de transporte",f"Pedido #{oid}. Aceite ou rejeite no AgroLink."); audit(db,u["id"],"TRANSPORT_REQUESTED","deliveries",did,{"transporter_id":x.transporter_id}); db.commit(); db.close()
+    db.execute("UPDATE orders SET delivery_status='REQUESTED',delivery_code_hash=? WHERE id=?",(delivery_hash(code),oid)); db.execute("UPDATE vehicles SET status='RESERVED' WHERE id=?",(v["id"],)); notify(db,x.transporter_id,"Nova solicitação de transporte",f"Pedido #{oid}. Aceite ou rejeite no EPYALINK."); audit(db,u["id"],"TRANSPORT_REQUESTED","deliveries",did,{"transporter_id":x.transporter_id}); db.commit(); db.close()
     # The delivery code is returned only to the buyer/seller who initiated the assignment; transporter never receives it.
     return {"delivery_id":did,"status":"REQUESTED","message":"Solicitação enviada. O código de confirmação é reservado para a confirmação da entrega pelo comprador."}
 
@@ -577,8 +583,9 @@ def payment(oid:int,x:Payment,u=Depends(role("buyer"))):
     c=db.execute("INSERT INTO payments(order_id,method,transaction_id,reference,amount_kz,status,idempotency_key) VALUES(?,?,?,?,?,?,?)",(oid,x.method,x.transaction_id,x.reference,x.amount_kz,"PENDING",x.idempotency_key)); db.execute("UPDATE orders SET payment_status='PENDING' WHERE id=?",(oid,)); audit(db,u["id"],"PAYMENT_SUBMITTED","payments",c.lastrowid,{"method":x.method}); db.commit(); r=dict(db.execute("SELECT * FROM payments WHERE id=?",(c.lastrowid,)).fetchone()); db.close(); return r
 
 @app.post("/api/payments/{pid}/webhook")
-def webhook(pid:int,payload:dict, x_agrolink_webhook: str = Header(default="")):
-    if not x_agrolink_webhook or not SECRET_KEY or not hmac.compare_digest(x_agrolink_webhook, SECRET_KEY):
+def webhook(pid:int,payload:dict, x_epyalink_webhook: str = Header(default="", alias="X-EPYALINK-Webhook"), x_agrolink_webhook: str = Header(default="", alias="X-AgroLink-Webhook")):
+    webhook_secret=x_epyalink_webhook or x_agrolink_webhook
+    if not webhook_secret or not SECRET_KEY or not hmac.compare_digest(webhook_secret, SECRET_KEY):
         raise HTTPException(401,"Webhook não autorizado")
     # MVP placeholder: production PSP webhook must validate provider signature, amount, reference and event id before confirming.
     db=get_db(); p=db.execute("SELECT * FROM payments WHERE id=?",(pid,)).fetchone()
@@ -888,18 +895,62 @@ def mark_settlement_paid(sid:int,x:SettlementPayment,u=Depends(role("admin"))):
     if st["status"]=="PAID": db.close(); raise HTTPException(409,"Liquidação já marcada como paga")
     db.execute("UPDATE settlements SET status='PAID',payment_reference=?,paid_at=CURRENT_TIMESTAMP WHERE id=?",(x.payment_reference.strip(),sid)); notify(db,st["beneficiary_user_id"],"Pagamento de liquidação",f"A liquidação #{sid} foi marcada como paga."); audit(db,u["id"],"SETTLEMENT_PAID","settlements",sid,{"reference":x.payment_reference}); db.commit(); db.close(); return {"ok":True,"status":"PAID"}
 
+def _ws_user(token: str):
+    if not token:
+        return None
+    try:
+        payload=jwt.decode(token,SECRET_KEY,algorithms=[JWT_ALGORITHM])
+        uid=int(payload.get("sub"))
+    except (jwt.ExpiredSignatureError,jwt.InvalidTokenError,TypeError,ValueError):
+        return None
+    db=get_db()
+    try:
+        row=db.execute("SELECT id,full_name,role,status FROM users WHERE id=? AND status='active'",(uid,)).fetchone()
+        return dict(row) if row else None
+    finally:
+        db.close()
+
 @app.websocket("/ws/chat/{oid}")
-async def ws_chat(ws:WebSocket,oid:int):
-    await ws.accept(); await ws.send_json({"type":"info","message":"Chat em tempo real disponível; mensagens também podem usar /api/orders/{id}/chat."})
+async def ws_chat(ws:WebSocket,oid:int,token:str=""):
+    user=_ws_user(token)
+    if not user:
+        await ws.close(code=4001,reason="Sessão inválida ou expirada")
+        return
+    db=get_db()
+    try:
+        order_access(db,oid,user["id"])
+    except HTTPException:
+        db.close()
+        await ws.close(code=4003,reason="Sem acesso ao chat")
+        return
+    db.close()
+    await ws.accept()
+    await ws.send_json({"type":"ready","order_id":oid,"message":"Canal de chat conectado. Use a API de mensagens para persistência."})
     try:
         while True:
-            msg=await ws.receive_text(); await ws.send_json({"type":"echo","message":msg})
-    except WebSocketDisconnect: pass
+            await ws.receive_text()
+    except WebSocketDisconnect:
+        pass
 
 @app.websocket("/ws/location/{oid}")
-async def ws_location(ws:WebSocket,oid:int):
-    await ws.accept(); await ws.send_json({"type":"info","message":"Canal de localização conectado."})
+async def ws_location(ws:WebSocket,oid:int,token:str=""):
+    user=_ws_user(token)
+    if not user or user["role"] not in ("transport_company","private_transporter","transporter"):
+        await ws.close(code=4001,reason="Sessão ou permissão inválida")
+        return
+    db=get_db()
+    try:
+        order_access(db,oid,user["id"])
+    except HTTPException:
+        db.close()
+        await ws.close(code=4003,reason="Sem acesso à entrega")
+        return
+    db.close()
+    await ws.accept()
+    await ws.send_json({"type":"ready","order_id":oid,"message":"Canal de localização conectado. Use a API de localização para persistência."})
     try:
         while True:
-            msg=await ws.receive_text(); await ws.send_text(msg)
-    except WebSocketDisconnect: pass
+            await ws.receive_text()
+    except WebSocketDisconnect:
+        pass
+

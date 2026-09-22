@@ -6,6 +6,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 APP_NAME = os.getenv("APP_NAME", "EPYALINK")
+APP_VERSION = os.getenv("APP_VERSION", "1.6.1")
 APP_ENV = os.getenv("APP_ENV", "development").strip().lower()
 SECRET_KEY = os.getenv("SECRET_KEY", "agrolink-development-only-secret-change-before-production-2026").strip()
 DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./agrolink_v11.db")
@@ -57,5 +58,7 @@ JWT_ALGORITHM = os.getenv("JWT_ALGORITHM", "HS256")
 JWT_EXPIRE_MINUTES = int(os.getenv("JWT_EXPIRE_MINUTES", "10080"))
 ROUTING_BASE_URL = os.getenv("ROUTING_BASE_URL", "https://router.project-osrm.org")
 GEOCODING_BASE_URL = os.getenv("GEOCODING_BASE_URL", "https://nominatim.openstreetmap.org")
+# Keep the historical SQLite filename by default so existing demo data is not silently replaced.
 FILE_STORAGE_DIR = os.getenv("FILE_STORAGE_DIR", "private_uploads")
+CORS_ALLOW_ORIGINS = [x.strip() for x in os.getenv("CORS_ALLOW_ORIGINS", "").split(",") if x.strip()]
 MAX_UPLOAD_BYTES = int(os.getenv("MAX_UPLOAD_BYTES", str(5*1024*1024)))
