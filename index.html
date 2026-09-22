@@ -199,7 +199,7 @@ if (typeof window.t !== 'function') {
 async function adminList(kind){try{const rows=await api('/api/admin/'+kind);const title=adminT(kind);
 const box =$('adminListBox');
 if (!box) return;
-bo.innerHTML=` <div class="card"><h3>${esc(title)}</h3>${rows.slice(0,50).map(r=>`<div class="admin-row">
+box.innerHTML=` <div class="card"><h3>${esc(title)}</h3>${rows.slice(0,50).map(r=>`<div class="admin-row">
 <div class="grid">${Object.entries(r).map(([k,v])=>`<div><span class="muted">${esc(adminT(k))}
 </span><div>${esc(adminValue(k,v))}</div></div>`).join('')}
 </div></div>`).join('')||`<div class="muted">${t('Sem dados.')}</div>`}</div>`}catch(e){alert(e.message);}}
