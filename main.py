@@ -183,6 +183,8 @@ def register(x:Register, request:Request):
     db=get_db(); phone=normalize_phone(x.phone)
     if db.execute("SELECT id FROM users WHERE phone=?",(phone,)).fetchone():
         db.close(); raise HTTPException(409,"Telefone já registado")
+    if not x.profile_photo_data_base64 and not x.profile_photo_file_id:
+        db.close(); raise HTTPException(422,"Fotografia de perfil é obrigatória")
     if x.role=="seller" and not (x.company_name or x.farm_name):
         db.close(); raise HTTPException(422,"Indique empresa ou fazenda")
     if x.role in ("private_transporter","transporter") and not x.bi_number:
@@ -205,8 +207,10 @@ def register(x:Register, request:Request):
                 raw=base64.b64decode(x.profile_photo_data_base64,validate=True)
             except Exception:
                 raise HTTPException(400,"Fotografia de perfil inválida")
-            if not x.profile_photo_content_type or not x.profile_photo_content_type.startswith("image/"):
-                raise HTTPException(415,"A fotografia deve ser uma imagem")
+            if not x.profile_photo_content_type or x.profile_photo_content_type not in ("image/jpeg","image/png","image/webp"):
+                raise HTTPException(415,"A fotografia deve ser JPG, PNG ou WebP")
+            if not x.profile_photo_filename:
+                raise HTTPException(400,"Nome da fotografia inválido")
             # Importante: usar a mesma ligação SQLite do cadastro.
             # Isto evita o erro de bloqueio que acontecia quando a fotografia
             # abria uma segunda ligação enquanto o INSERT do utilizador estava em transação.
@@ -271,7 +275,7 @@ def _send_password_otp(phone, code=None):
     provider=(PASSWORD_RESET_SMS_PROVIDER or "").lower()
     if provider=="kambasms" and KAMBASMS_API_KEY:
         result=_kamba_request("/otp/send", {"phone":_kamba_phone(phone)}, KAMBASMS_API_KEY)
-        if not result.get("success"):
+        if result.get("success") is not True:
             raise HTTPException(503,"Não foi possível enviar o código por SMS. Tente novamente.")
         return "kambasms", int(result.get("expires_in") or PASSWORD_RESET_TTL_MINUTES*60)
     if PASSWORD_RESET_DEMO:
@@ -330,7 +334,10 @@ def reset_password(x:ResetPassword, request:Request):
     except Exception: expired=True
     if expired:
         db.close(); raise HTTPException(400,"Código expirado. Solicite um novo código.")
-    if not _verify_password_otp(token["provider"] if "provider" in token.keys() else "local", phone, x.code, token["token_hash"]):
+    provider=token["provider"] if "provider" in token.keys() else "local"
+    if provider not in ("local","kambasms"):
+        db.close(); raise HTTPException(400,"Código inválido")
+    if not _verify_password_otp(provider, phone, x.code, token["token_hash"]):
         db.execute("UPDATE password_reset_tokens SET attempts=attempts+1 WHERE id=?",(token["id"],)); db.commit(); db.close(); raise HTTPException(400,"Código inválido")
     db.execute("UPDATE users SET password_hash=? WHERE id=?",(hash_password(x.new_password),u["id"]))
     db.execute("UPDATE password_reset_tokens SET used_at=CURRENT_TIMESTAMP WHERE id=?",(token["id"],))
