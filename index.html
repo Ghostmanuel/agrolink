@@ -237,17 +237,8 @@ function accountMenu() {
   }
 
   openModal('#modal');
-}
-  
-  
-  
-  /*function accountMenu(){
-  // O Perfil contém apenas a conta e o acesso às Definições.
-  // Informações institucionais e suporte ficam exclusivamente no menu ☰.
-  if($('accountMenu')) $('accountMenu').innerHTML='<div class="card"><button class="btn secondary full" type="button" onclick="settingsPanel()"> ⚙️ Definições</button></div>';
-}*/
+
 async function settingsPanel(){
-  openModal();
   $('modalTitle').textContent='Definições';
   const options=Object.entries(window.epyaLanguages||{}).map(([k,v])=>`<option value="${esc(k)}" ${k===(localStorage.getItem('epyalink_language')||'pt')?'selected':''}>${esc(v.label)} — ${esc(v.status)}</option>`).join('');
   let html=`<div class="card"><h3>Idioma</h3><p class="muted">O idioma da aplicação é alterado apenas aqui.</p><div class="field"><label>Idioma</label><select id="userLanguage" onchange="setLanguage(this.value);settingsPanel()">${options}</select></div></div>`;
