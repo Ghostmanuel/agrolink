@@ -96,7 +96,17 @@ async function api(path,opts={}){opts.headers={...(opts.headers||{}), 'Content-T
 const TURNSTILE_WIDGETS={};
 function captchaToken(id){try{return window.turnstile&&TURNSTILE_WIDGETS[id]?turnstile.getResponse(TURNSTILE_WIDGETS[id]):''}catch{return ''}}
 function resetCaptchas(){try{Object.values(TURNSTILE_WIDGETS).forEach(w=>window.turnstile&&turnstile.reset(w))}catch{}}
-async function renderCaptchas(){try{const cfg=await fetch('/api/public-config').then(r=>r.json());const render=()=>{if(!window.turnstile)return setTimeout(render,250);document.querySelectorAll('.cf-turnstile').forEach(el=>{if(el.id&&!TURNSTILE_WIDGETS[el.id])TURNSTILE_WIDGETS[el.id]=turnstile.render(el,{sitekey:cfg.turnstile_site_key,theme:'auto'})})};render()}catch{}}
+async function renderCaptchas(){try{const res= await fetch('/api/public-config'); const cfg= await res.json();
+if(cfg && typeof cfg.turnstile_site_key === 'string'){
+  const el = $('#recoveryBox');
+  if (el){
+    TURNSTILE_WIDGETS[el.id] = turnstile.render(el, { sitekey: cfg.turnstile_site_key, theme: 'auto' });
+  }
+  }
+}catch{
+  console.error('Erro de configuracao publicas:', e);
+}}
+/*{try{const cfg=await fetch('/api/public-config').then(r=>r.json());const render=()=>{if(!window.turnstile)return setTimeout(render,250);document.querySelectorAll('.cf-turnstile').forEach(el=>{if(el.id&&!TURNSTILE_WIDGETS[el.id])TURNSTILE_WIDGETS[el.id]=turnstile.render(el,{sitekey:cfg.turnstile_site_key,theme:'auto'})})};render()}catch{}} */
 function authMode(m){$('recoveryBox').classList.add('hidden');$('loginForm').classList.toggle('hidden',m!=='login');$('registerForm').classList.toggle('hidden',m!=='register');$('authMsg').innerHTML='';if(m==='register')roleFields()}
 function togglePassword(id,btn){const el=$(id);if(!el)return;el.type=el.type==='password'?'text':'password';btn.textContent=el.type==='password'?'👁':'🙈';}
 function roleFields(){const r=$('rRole').value;const seller=r==='seller';const company=r==='transport_company';const privateT=r==='private_transporter'||r==='transporter';$('sellerFields').classList.toggle('hidden',!seller);$('companyFields').classList.toggle('hidden',!company);$('transFields').classList.toggle('hidden',!privateT);$('rCompany').required=false;$('rFarm').required=false;$('rTransportCompany').required=company;$('rBI').required=privateT;}
@@ -662,7 +672,7 @@ if($('accountMenu')) accountMenu();
     es:{'buyer':'Comprador','seller':'Vendedor','private_transporter':'Transportista independiente','transport_company':'Empresa de transporte','admin':'Administrador','SELLER_ACCEPTED':'Aceptado por el vendedor','SELLER_REJECTED':'Rechazado por el vendedor','PENDING':'Pendiente','PAID':'Pagado','NOT_STARTED':'No iniciado','DELIVERED':'Entregado','IN_TRANSIT':'En transporte','REQUESTED':'Solicitado','ACCEPTED':'Aceptado','REJECTED':'Rechazado','COMPLETED':'Completado','CANCELLED':'Cancelado'}
   };
   const EXTRA_I18N={
-    pt:{'Informações e suporte':'Informações e suporte','Configurações':'Configurações','Abrir,configurações':'brir,configurações','Fechar':'Fechar','Guardar':'Guardar','Configuração guardada':'Configuração guardada','Perfil e segurança pessoais devem ser geridos pelo utilizador':'Perfil e segurança pessoais devem ser geridos pelo utilizador','configurações operacionais estão disponíveis no painel administrativo':'configurações operacionais estão disponíveis no painel administrativ','Ação':'Ação','Módulo':'Modulo','Ex.: LOGIN':'EX.:LOGIN','Ex.: orders':'Ex.: pedidos','Filtrar auditoria':'Filtrar auditoria','Total':'Total','Sistema':'Sistema','Exportar relatório':'Exportar relatório','Utilizadores por perfil':'Utilizadores por perfil','Pedidos por estado':'Pedidos por estado','Vendas (Kz)':'Vendas (Kz)','Transporte (Kz)':'Transporte (Kz)','Comissões EPYALINK(Kz)':'Comissões PYALINK(Kz)','Pedidos':'Pedidos','Entregues':'Entregues','Utilizadores ativos': 'Utilizadores ativos','Produtos ativos':'Produtos ativos','Pagamentos pendentes (Kz)':'Pagamentos pendentes','Liquidações pendentes (Kz)':'Liquidações pendentes (Kz)','Publicar produto':'Publicar produtos','Nome':'Nome','Categoria':'Categorias','Preço Kz':'Preeço (Kz)','Quantidade','Quantidade','Unidade':'Unidade','Localização':'Localização','Fotografia do produto':'Fotografia do produto','Descrição':'Descrição','Sem categoria':'Sem categira','Produto publicado':'Produto publicado','Ver fotografia':'Ver fotografia','Sem mensagens.':'Sem mensagens','tonelada':'tonelada','saco':'saco','unidade':'unidade','Origem/fazenda (opcional; o perfil do produtor é a referência principal)':'Origem/fazenda (opcional; o perfil do produtor é a referência principal)','Liberar liquidação':'Liberar liquidação','Relatórios':'Relatórios','Auditoria':'Auditoria','Configurações':'Configurações'},
+    pt:{'Informações e suporte':'Informações e suporte','Configurações':'Configurações','Abrir':'Abrir','Fechar':'Fechar','Guardar':'Guardar','Configuração guardada':'Configuração guardada','Perfil e segurança pessoais devem ser geridos pelo utilizador':'Perfil e segurança pessoais devem ser geridos pelo utilizador','configurações operacionais estão disponíveis no painel administrativo':'configurações operacionais estão disponíveis no painel administrativ','Ação':'Ação','Módulo':'Modulo','Ex.: LOGIN':'EX.:LOGIN','Ex.: orders':'Ex.: pedidos','Filtrar auditoria':'Filtrar auditoria','Total':'Total','Sistema':'Sistema','Exportar relatório':'Exportar relatório','Utilizadores por perfil':'Utilizadores por perfil','Pedidos por estado':'Pedidos por estado','Vendas (Kz)':'Vendas (Kz)','Transporte (Kz)':'Transporte (Kz)','Comissões EPYALINK(Kz)':'Comissões PYALINK(Kz)','Pedidos':'Pedidos','Entregues':'Entregues','Utilizadores ativos': 'Utilizadores ativos','Produtos ativos':'Produtos ativos','Pagamentos pendentes (Kz)':'Pagamentos pendentes','Liquidações pendentes (Kz)':'Liquidações pendentes (Kz)','Publicar produto':'Publicar produtos','Nome':'Nome','Categoria':'Categorias','Preço Kz':'Preeço (Kz)','Quantidade','Quantidade','Unidade':'Unidade','Localização':'Localização','Fotografia do produto':'Fotografia do produto','Descrição':'Descrição','Sem categoria':'Sem categira','Produto publicado':'Produto publicado','Ver fotografia':'Ver fotografia','Sem mensagens.':'Sem mensagens','tonelada':'tonelada','saco':'saco','unidade':'unidade','Origem/fazenda (opcional; o perfil do produtor é a referência principal)':'Origem/fazenda (opcional; o perfil do produtor é a referência principal)','Liberar liquidação':'Liberar liquidação','Relatórios':'Relatórios','Auditoria':'Auditoria','Configurações':'Configurações'},
     en:{'tonelada':'tonne','saco':'sack','unidade':'unit','Origem/fazenda (opcional; o perfil do produtor é a referência principal)':'Origin/farm (optional; farmer profile is the main reference)','Liberar liquidação':'Release settlement','Relatórios':'Reports','Auditoria':'Audit','Configurações':'Settings'},
     fr:{'tonelada':'tonne','saco':'sac','unidade':'unité','Origem/fazenda (opcional; o perfil do produtor é a referência principal)':'Origine/ferme (facultatif ; le profil du producteur est la référence principale)','Liberar liquidação':'Libérer le règlement','Relatórios':'Rapports','Auditoria':'Audit','Configurações':'Paramètres'},
     es:{'tonelada':'tonelada','saco':'saco','unidade':'unidad','Origem/fazenda (opcional; o perfil do produtor é a referência principal)':'Origen/granja (opcional; el perfil del productor es la referencia principal)','Liberar liquidação':'Liberar liquidación','Relatórios':'Informes','Auditoria':'Auditoría','Configurações':'Configuración'}
@@ -853,10 +863,19 @@ if($('accountMenu')) accountMenu();
         panel.style.zIndex='99999';
     }
 };
-  window.epyaT=t;
-  window.epyaLanguages=LANGS;
-  window.epyaRenderLanguages=renderAll;
-  document.addEventListener('click',e=>{if(!e.target.closest('.lang-picker')&&!e.target.closest('.app-lang'))document.querySelectorAll('.lang-panel').forEach(x=>x.classList.remove('open'))});
-  setTimeout(renderAll,50);
-})();
-</script></body></html>
+  window.epyaT = t;
+            window.epyaLanguages = LANGS;
+            window.epyaRenderLanguages = renderAll;
+
+            // Fecha os painéis de idioma ao clicar fora
+            document.addEventListener('click', e => {
+                if (!e.target.closest('.lang-picker') && !e.target.closest('.app-lang')) {
+                    document.querySelectorAll('.lang-panel').forEach(x => x.classList.remove('open'));
+                }
+            });
+
+            setTimeout(renderAll, 50);
+        })();
+    </script>
+  </body>
+</html>
