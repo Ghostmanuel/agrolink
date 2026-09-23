@@ -92,6 +92,19 @@
 <div id="modal" class="modal"><div class="sheet"><div class="row between"><h3 id="modalTitle">EPYALINK</h3><button class="btn secondary" onclick="closeModal()">Fechar</button></div><div id="modalBody"></div></div></div>
 </div>
 <script>
+ document.addEventListener('DOMContentLoaded', function() {
+    const accountBtn = document.getElementById('accountMenu') || document.querySelector('.brand');
+    if (accountBtn) {
+      accountBtn.addEventListener('click', function() {
+        if (typeof show === 'function') {
+          show('profile');
+        }
+      });
+    }
+  });
+
+  const S={token:localStorage.getItem('epyalink_token')...
+  
 const S={token:localStorage.getItem('epyalink_token')||localStorage.getItem('agrolink_token')||'',role:localStorage.getItem('epyalink_role')||localStorage.getItem('agrolink_role')||'',name:localStorage.getItem('epyalink_name')||localStorage.getItem('agrolink_name')||'',cat:null};
 const $=id=>document.getElementById(id); const esc=s=>String(s??'').replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]));
 async function api(path,opts={}){opts.headers={...(opts.headers||{}), 'Content-Type':'application/json'};if(S.token)opts.headers.Authorization='Bearer '+S.token;const r=await fetch(path,opts);let d={};try{d=await r.json()}catch{}if(!r.ok)throw Error(d.detail||d.message||`Erro ${r.status}`);return d}
