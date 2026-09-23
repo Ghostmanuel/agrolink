@@ -100,7 +100,7 @@ async function renderCaptchas() {
     const cfg = await response.json();
     const siteKey = typeof cfg.turnstile === 'string' 
       ? cfg.turnstile 
-      : (cfg.turnstile?.sitekey || '');
+      : (cfg.turnstile?.sitekey || cfg.sitekey ||'');
 
     if (!siteKey) return;
 
