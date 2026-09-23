@@ -1471,9 +1471,55 @@
                     $('adminPanel').innerHTML = '<div class="notice error">' + esc(e.message) + '</div>'
                 }
             }
-            // Traduções do painel são declaradas uma única vez abaixo, antes da inicialização automática.
+            // 1. Função de tradução/etiquetagem das chaves do Painel
+            function adminT(k) {
+                const map = {
+                    // Estatísticas e Módulos
+                    users: 'Utilizadores',
+                    producers: 'Produtores / Vendedores',
+                    sellers: 'Produtores / Vendedores',
+                    transporters: 'Transportadores',
+                    vehicles: 'Veículos',
+                    products: 'Produtos',
+                    orders: 'Pedidos',
+                    payments: 'Pagamentos',
+                    commissions: 'Comissões',
+                    notifications: 'Notificações',
+                    settlements: 'Liquidações',
+                    sales_this_month: 'Vendas deste Mês',
+                    active_transports: 'Transportes Ativos',
+
+                    // Campos/Propriedades comuns de tabelas
+                    id: 'ID',
+                    full_name: 'Nome Completo',
+                    phone: 'Telefone',
+                    role: 'Função',
+                    status: 'Estado',
+                    created_at: 'Data de Criação',
+                    price: 'Preço',
+                    title: 'Título',
+                    total: 'Total'
+                };
+                return map[k] || k || '';
+            }
+
+            // 2. Função de formatação de valores
+            function adminValue(k, v) {
+                if (v === null || v === undefined)
+                    return '-';
+                if (typeof v === 'boolean')
+                    return v ? 'Sim' : 'Não';
+                if (typeof v === 'object')
+                    return JSON.stringify(v);
+                return String(v);
+            }
+
+            // 3. Função de tradução genérica (caso não exista no seu projeto)
             if (typeof window.t !== 'function') {
-                window.t = function(str) { return str; };
+                window.t = function(str) {
+                    return str;
+                }
+                ;
             }
 
             async function adminList(kind) {
@@ -1524,184 +1570,8 @@
             if ('serviceWorker'in navigator)
                 navigator.serviceWorker.register('/sw.js?v=16.2.2').catch( () => {}
                 );
-            // IMPORTANTE: todas as dependências usadas por start() devem estar inicializadas antes de executá-lo.
-            const ADMIN_I18N = {
-                pt: {
-                    'users': 'Utilizadores',
-                    'producers': 'Produtores',
-                    'transporters': 'Transportadores',
-                    'vehicles': 'Veículos',
-                    'products': 'Produtos',
-                    'orders': 'Pedidos',
-                    'payments': 'Pagamentos',
-                    'commissions': 'Comissões',
-                    'active_users': 'Utilizadores ativos',
-                    'total_users': 'Total de utilizadores',
-                    'total_products': 'Produtos ativos',
-                    'total_orders': 'Total de pedidos',
-                    'total_sales_kz': 'Vendas (Kz)',
-                    'total_transport_kz': 'Transporte (Kz)',
-                    'pending_payments_kz': 'Pagamentos pendentes (Kz)',
-                    'pending_settlements_kz': 'Liquidações pendentes (Kz)',
-                    'sales_total_kz': 'Vendas (Kz)',
-                    'transport_total_kz': 'Transporte (Kz)',
-                    'orders_total': 'Pedidos',
-                    'delivered_orders': 'Pedidos entregues',
-                    'products_active': 'Produtos ativos',
-                    'pending_payments_kz': 'Pagamentos pendentes (Kz)',
-                    'pending_settlements_kz': 'Liquidações pendentes (Kz)',
-                    'role': 'Perfil',
-                    'full_name': 'Nome completo',
-                    'phone': 'Telefone',
-                    'province': 'Província',
-                    'address': 'Endereço',
-                    'status': 'Estado',
-                    'created_at': 'Criado em',
-                    'seller': 'Produtor / Vendedor',
-                    'buyer': 'Comprador',
-                    'transport_company': 'Empresa Transportadora',
-                    'private_transporter': 'Transportador Particular / Independente',
-                    'admin': 'Administrador'
-                },
-                en: {
-                    'users': 'Users',
-                    'producers': 'Farmers',
-                    'transporters': 'Transporters',
-                    'vehicles': 'Vehicles',
-                    'products': 'Products',
-                    'orders': 'Orders',
-                    'payments': 'Payments',
-                    'commissions': 'Commissions',
-                    'active_users': 'Active users',
-                    'total_users': 'Total users',
-                    'total_products': 'Active products',
-                    'total_orders': 'Total orders',
-                    'total_sales_kz': 'Sales (Kz)',
-                    'total_transport_kz': 'Transport (Kz)',
-                    'pending_payments_kz': 'Pending payments (Kz)',
-                    'pending_settlements_kz': 'Pending settlements (Kz)',
-                    'sales_total_kz': 'Sales (Kz)',
-                    'transport_total_kz': 'Transport (Kz)',
-                    'orders_total': 'Orders',
-                    'delivered_orders': 'Delivered orders',
-                    'products_active': 'Active products',
-                    'role': 'Role',
-                    'full_name': 'Full name',
-                    'phone': 'Phone',
-                    'province': 'Province',
-                    'address': 'Address',
-                    'status': 'Status',
-                    'created_at': 'Created at',
-                    'seller': 'Farmer / Seller',
-                    'buyer': 'Buyer',
-                    'transport_company': 'Transport company',
-                    'private_transporter': 'Independent transporter',
-                    'admin': 'Administrator'
-                },
-                fr: {
-                    'users': 'Utilisateurs',
-                    'producers': 'Producteurs',
-                    'transporters': 'Transporteurs',
-                    'vehicles': 'Véhicules',
-                    'products': 'Produits',
-                    'orders': 'Commandes',
-                    'payments': 'Paiements',
-                    'commissions': 'Commissions',
-                    'active_users': 'Utilisateurs actifs',
-                    'total_users': 'Total utilisateurs',
-                    'total_products': 'Produits actifs',
-                    'total_orders': 'Total commandes',
-                    'total_sales_kz': 'Ventes (Kz)',
-                    'total_transport_kz': 'Transport (Kz)',
-                    'pending_payments_kz': 'Paiements en attente (Kz)',
-                    'pending_settlements_kz': 'Règlements en attente (Kz)',
-                    'sales_total_kz': 'Ventes (Kz)',
-                    'transport_total_kz': 'Transport (Kz)',
-                    'orders_total': 'Commandes',
-                    'delivered_orders': 'Commandes livrées',
-                    'products_active': 'Produits actifs',
-                    'role': 'Profil',
-                    'full_name': 'Nom complet',
-                    'phone': 'Téléphone',
-                    'province': 'Province',
-                    'address': 'Adresse',
-                    'status': 'État',
-                    'created_at': 'Créé le',
-                    'seller': 'Producteur / Vendeur',
-                    'buyer': 'Acheteur',
-                    'transport_company': 'Entreprise de transport',
-                    'private_transporter': 'Transporteur indépendant',
-                    'admin': 'Administrateur'
-                },
-                es: {
-                    'users': 'Usuarios',
-                    'producers': 'Productores',
-                    'transporters': 'Transportistas',
-                    'vehicles': 'Vehículos',
-                    'products': 'Productos',
-                    'orders': 'Pedidos',
-                    'payments': 'Pagos',
-                    'commissions': 'Comisiones',
-                    'active_users': 'Usuarios activos',
-                    'total_users': 'Total usuarios',
-                    'total_products': 'Productos activos',
-                    'total_orders': 'Total pedidos',
-                    'total_sales_kz': 'Ventas (Kz)',
-                    'total_transport_kz': 'Transporte (Kz)',
-                    'pending_payments_kz': 'Pagos pendientes (Kz)',
-                    'pending_settlements_kz': 'Liquidaciones pendientes (Kz)',
-                    'sales_total_kz': 'Ventas (Kz)',
-                    'transport_total_kz': 'Transporte (Kz)',
-                    'orders_total': 'Pedidos',
-                    'delivered_orders': 'Pedidos entregados',
-                    'products_active': 'Productos activos',
-                    'role': 'Perfil',
-                    'full_name': 'Nombre completo',
-                    'phone': 'Teléfono',
-                    'province': 'Provincia',
-                    'address': 'Dirección',
-                    'status': 'Estado',
-                    'created_at': 'Creado el',
-                    'seller': 'Productor / Vendedor',
-                    'buyer': 'Comprador',
-                    'transport_company': 'Empresa de transporte',
-                    'private_transporter': 'Transportista independiente',
-                    'admin': 'Administrador'
-                }
-            };
-            function adminT(key) {
-                return (ADMIN_I18N[lang] && ADMIN_I18N[lang][key]) || ADMIN_I18N.pt[key] || t(key) || key
-            }
-            function adminValue(key, value) {
-                if (value === null || value === undefined)
-                    return '';
-                if (typeof value === 'string') {
-                    const k = String(value).toLowerCase();
-                    if (ADMIN_I18N[lang]?.[k])
-                        return ADMIN_I18N[lang][k];
-                    if (ADMIN_I18N.pt?.[k] && ADMIN_I18N[lang]?.[k])
-                        return ADMIN_I18N[lang][k];
-                }
-                return value
-            }
-            function roleLabel(role) {
-                const r = String(role || '').toLowerCase();
-                const aliases = {
-                    seller: 'seller',
-                    buyer: 'buyer',
-                    transporter: 'private_transporter',
-                    private_transporter: 'private_transporter',
-                    transport_company: 'transport_company',
-                    admin: 'admin'
-                };
-                const key = aliases[r] || r;
-                return (ADMIN_I18N[lang] && ADMIN_I18N[lang][key]) || (ADMIN_I18N.pt && ADMIN_I18N.pt[key]) || t(r) || r;
-            }
-            const KEY = 'epyalink_language';
-            let lang = localStorage.getItem(KEY) || 'pt';
-
             if (S.token)
-                start();
+                window.addEventListener('load', () => start(), { once: true });
             // EPYALINK v16.1 UI: institutional content, settings, reports, audit and media.
             const AL_INFO = {
                 'Quem somos': 'A EPYALINK é uma plataforma digital para aproximar produtores, compradores e operadores de transporte agrícola em Angola.',
@@ -2506,7 +2376,8 @@
             }
             ;
 
-            const LANGS = {
+            (function() {
+                const LANGS = {
                     pt: {
                         label: 'Português',
                         flag: '🇦🇴',
@@ -2555,7 +2426,9 @@
                 };
 
                 // Mapeia apenas os nomes dos idiomas para alimentar a window.epyalanguages do settingsPanel
-            window.epyalanguages = Object.fromEntries(Object.entries(LANGS).map( ([code,item]) => [code, `${item.flag} ${item.label}`]));
+                window.epyalanguages = Object.fromEntries(Object.entries(LANGS).map( ([code,item]) => [code, `${item.flag} ${item.label}`]));
+            }
+            )();
             const TECH = {
                 pt: {
                     'buyer': 'Comprador',
@@ -3780,6 +3653,180 @@
                 'O EPYALINK conecta produtores, consumidores e transportadores, com ferramentas de mercado, pedidos, logística, comunicação e gestão.': 'EPYALINK conecta productores, consumidores y transportistas con herramientas de mercado, pedidos, logística, comunicación y gestión.'
             }
             P.es = es;
+            const ADMIN_I18N = {
+                pt: {
+                    'users': 'Utilizadores',
+                    'producers': 'Produtores',
+                    'transporters': 'Transportadores',
+                    'vehicles': 'Veículos',
+                    'products': 'Produtos',
+                    'orders': 'Pedidos',
+                    'payments': 'Pagamentos',
+                    'commissions': 'Comissões',
+                    'active_users': 'Utilizadores ativos',
+                    'total_users': 'Total de utilizadores',
+                    'total_products': 'Produtos ativos',
+                    'total_orders': 'Total de pedidos',
+                    'total_sales_kz': 'Vendas (Kz)',
+                    'total_transport_kz': 'Transporte (Kz)',
+                    'pending_payments_kz': 'Pagamentos pendentes (Kz)',
+                    'pending_settlements_kz': 'Liquidações pendentes (Kz)',
+                    'sales_total_kz': 'Vendas (Kz)',
+                    'transport_total_kz': 'Transporte (Kz)',
+                    'orders_total': 'Pedidos',
+                    'delivered_orders': 'Pedidos entregues',
+                    'products_active': 'Produtos ativos',
+                    'pending_payments_kz': 'Pagamentos pendentes (Kz)',
+                    'pending_settlements_kz': 'Liquidações pendentes (Kz)',
+                    'role': 'Perfil',
+                    'full_name': 'Nome completo',
+                    'phone': 'Telefone',
+                    'province': 'Província',
+                    'address': 'Endereço',
+                    'status': 'Estado',
+                    'created_at': 'Criado em',
+                    'seller': 'Produtor / Vendedor',
+                    'buyer': 'Comprador',
+                    'transport_company': 'Empresa Transportadora',
+                    'private_transporter': 'Transportador Particular / Independente',
+                    'admin': 'Administrador'
+                },
+                en: {
+                    'users': 'Users',
+                    'producers': 'Farmers',
+                    'transporters': 'Transporters',
+                    'vehicles': 'Vehicles',
+                    'products': 'Products',
+                    'orders': 'Orders',
+                    'payments': 'Payments',
+                    'commissions': 'Commissions',
+                    'active_users': 'Active users',
+                    'total_users': 'Total users',
+                    'total_products': 'Active products',
+                    'total_orders': 'Total orders',
+                    'total_sales_kz': 'Sales (Kz)',
+                    'total_transport_kz': 'Transport (Kz)',
+                    'pending_payments_kz': 'Pending payments (Kz)',
+                    'pending_settlements_kz': 'Pending settlements (Kz)',
+                    'sales_total_kz': 'Sales (Kz)',
+                    'transport_total_kz': 'Transport (Kz)',
+                    'orders_total': 'Orders',
+                    'delivered_orders': 'Delivered orders',
+                    'products_active': 'Active products',
+                    'role': 'Role',
+                    'full_name': 'Full name',
+                    'phone': 'Phone',
+                    'province': 'Province',
+                    'address': 'Address',
+                    'status': 'Status',
+                    'created_at': 'Created at',
+                    'seller': 'Farmer / Seller',
+                    'buyer': 'Buyer',
+                    'transport_company': 'Transport company',
+                    'private_transporter': 'Independent transporter',
+                    'admin': 'Administrator'
+                },
+                fr: {
+                    'users': 'Utilisateurs',
+                    'producers': 'Producteurs',
+                    'transporters': 'Transporteurs',
+                    'vehicles': 'Véhicules',
+                    'products': 'Produits',
+                    'orders': 'Commandes',
+                    'payments': 'Paiements',
+                    'commissions': 'Commissions',
+                    'active_users': 'Utilisateurs actifs',
+                    'total_users': 'Total utilisateurs',
+                    'total_products': 'Produits actifs',
+                    'total_orders': 'Total commandes',
+                    'total_sales_kz': 'Ventes (Kz)',
+                    'total_transport_kz': 'Transport (Kz)',
+                    'pending_payments_kz': 'Paiements en attente (Kz)',
+                    'pending_settlements_kz': 'Règlements en attente (Kz)',
+                    'sales_total_kz': 'Ventes (Kz)',
+                    'transport_total_kz': 'Transport (Kz)',
+                    'orders_total': 'Commandes',
+                    'delivered_orders': 'Commandes livrées',
+                    'products_active': 'Produits actifs',
+                    'role': 'Profil',
+                    'full_name': 'Nom complet',
+                    'phone': 'Téléphone',
+                    'province': 'Province',
+                    'address': 'Adresse',
+                    'status': 'État',
+                    'created_at': 'Créé le',
+                    'seller': 'Producteur / Vendeur',
+                    'buyer': 'Acheteur',
+                    'transport_company': 'Entreprise de transport',
+                    'private_transporter': 'Transporteur indépendant',
+                    'admin': 'Administrateur'
+                },
+                es: {
+                    'users': 'Usuarios',
+                    'producers': 'Productores',
+                    'transporters': 'Transportistas',
+                    'vehicles': 'Vehículos',
+                    'products': 'Productos',
+                    'orders': 'Pedidos',
+                    'payments': 'Pagos',
+                    'commissions': 'Comisiones',
+                    'active_users': 'Usuarios activos',
+                    'total_users': 'Total usuarios',
+                    'total_products': 'Productos activos',
+                    'total_orders': 'Total pedidos',
+                    'total_sales_kz': 'Ventas (Kz)',
+                    'total_transport_kz': 'Transporte (Kz)',
+                    'pending_payments_kz': 'Pagos pendientes (Kz)',
+                    'pending_settlements_kz': 'Liquidaciones pendientes (Kz)',
+                    'sales_total_kz': 'Ventas (Kz)',
+                    'transport_total_kz': 'Transporte (Kz)',
+                    'orders_total': 'Pedidos',
+                    'delivered_orders': 'Pedidos entregados',
+                    'products_active': 'Productos activos',
+                    'role': 'Perfil',
+                    'full_name': 'Nombre completo',
+                    'phone': 'Teléfono',
+                    'province': 'Provincia',
+                    'address': 'Dirección',
+                    'status': 'Estado',
+                    'created_at': 'Creado el',
+                    'seller': 'Productor / Vendedor',
+                    'buyer': 'Comprador',
+                    'transport_company': 'Empresa de transporte',
+                    'private_transporter': 'Transportista independiente',
+                    'admin': 'Administrador'
+                }
+            };
+            function adminT(key) {
+                return (ADMIN_I18N[lang] && ADMIN_I18N[lang][key]) || ADMIN_I18N.pt[key] || t(key) || key
+            }
+            function adminValue(key, value) {
+                if (value === null || value === undefined)
+                    return '';
+                if (typeof value === 'string') {
+                    const k = String(value).toLowerCase();
+                    if (ADMIN_I18N[lang]?.[k])
+                        return ADMIN_I18N[lang][k];
+                    if (ADMIN_I18N.pt?.[k] && ADMIN_I18N[lang]?.[k])
+                        return ADMIN_I18N[lang][k];
+                }
+                return value
+            }
+            function roleLabel(role) {
+                const r = String(role || '').toLowerCase();
+                const aliases = {
+                    seller: 'seller',
+                    buyer: 'buyer',
+                    transporter: 'private_transporter',
+                    private_transporter: 'private_transporter',
+                    transport_company: 'transport_company',
+                    admin: 'admin'
+                };
+                const key = aliases[r] || r;
+                return (ADMIN_I18N[lang] && ADMIN_I18N[lang][key]) || (ADMIN_I18N.pt && ADMIN_I18N.pt[key]) || t(r) || r;
+            }
+            const KEY = 'epyalink_language';
+            let lang = localStorage.getItem(KEY) || 'pt';
             function current() {
                 return LANGS[lang] || LANGS.pt
             }
