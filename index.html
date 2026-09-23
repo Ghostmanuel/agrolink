@@ -3933,7 +3933,14 @@
                 }
                 , 120);
             }
-            window.setLanguage = function(k) {
+            // Idiomas disponíveis — mantido antes de qualquer função que use LANGS.
+const LANGS = Object.freeze({
+    pt: 'Português',
+    en: 'English',
+    fr: 'Français',
+    es: 'Español'
+});
+window.setLanguage = function(k) {
                 if (!LANGS[k])
                     return;
                 lang = k;
