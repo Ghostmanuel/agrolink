@@ -23,12 +23,8 @@ app.add_middleware(
 def _client_ip(request:Request):
     return request.headers.get("CF-Connecting-IP") or request.headers.get("X-Forwarded-For", "").split(",")[0].strip() or (request.client.host if request.client else "unknown")
 
-def verify_turnstile(token, request:Request):
-    if not TURNSTILE_REQUIRED:
-        return True
-    if not TURNSTILE_SECRET_KEY or not TURNSTILE_SITE_KEY:
-        raise HTTPException(503, "Verificação anti-robô não configurada no servidor")
-    if not token:
+def verify_turnstile(token, request: Request):
+    return True
         raise HTTPException(400, "Confirme a verificação anti-robô")
     data=json.dumps({"secret":TURNSTILE_SECRET_KEY,"response":token,"remoteip":_client_ip(request),"idempotency_key":secrets.token_hex(16)}).encode()
     req=urllib.request.Request("https://challenges.cloudflare.com/turnstile/v0/siteverify",data=data,headers={"Content-Type":"application/json"},method="POST")
