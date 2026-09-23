@@ -673,7 +673,20 @@ adminPanel=async function(){$('adminPanel').classList.remove('hidden');try{const
       if(btn)btn.setAttribute('aria-expanded','true');
     }
   };
-  document.addEventListener('click',e=>{if(!e.target.closest('.lang-picker')&&!e.target.closest('.app-lang'))document.querySelectorAll('.lang-panel').forEach(x=>x.classList.remove('open'))});
-  setTimeout(renderAll,50);
-})();
-</script></body></html>
+ <script>
+  // Evento para fechar os menus de idioma ao clicar fora
+  document.addEventListener('click', e => {
+    if (!e.target.closest('.lang-picker') && !e.target.closest('.app-lang')) {
+      document.querySelectorAll('.lang-panel').forEach(x => x.classList.remove('open'));
+    }
+  });
+
+  // Executa a inicialização após o carregamento da página
+  setTimeout(() => {
+    if (typeof renderAll === 'function') {
+      renderAll();
+    }
+  }, 50);
+</script>
+</body>
+</html>
