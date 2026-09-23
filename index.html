@@ -120,6 +120,7 @@ async function renderCaptchas() {
   } catch (e) {
     console.warn('Erro ao carregar captcha:', e);
   }
+}
 
   
 function authMode(m){$('recoveryBox').classList.add('hidden');$('loginForm').classList.toggle('hidden',m!=='login');$('registerForm').classList.toggle('hidden',m!=='register');$('authMsg').innerHTML='';if(m==='register')roleFields()}
