@@ -4,6 +4,7 @@
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
         <title>EPYALINK — Do campo ao mercado, conectado.</title>
+        <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
         <link rel="manifest" href="/manifest.json">
         <meta name="theme-color" content="#2F6B3A">
         <meta name="apple-mobile-web-app-capable" content="yes">
@@ -680,6 +681,10 @@
                             <input id="loginPassword" type="password" autocomplete="current-password" required>
                             <button type="button" aria-label="Mostrar palavra-passe" onclick="togglePassword('loginPassword',this)">👁</button>
                         </div>
+                        <div class="captcha-box">
+                            <div class="captcha-label">Verificação de segurança</div>
+                            <div id="loginTurnstile" class="cf-turnstile"></div>
+                        </div>
                         <button class="btn full" type="submit">Entrar</button>
                         <button type="button" class="btn secondary full" style="margin-top:8px" onclick="openRecovery()">Esqueci a palavra-passe</button>
                         <div class="auth-switch">
@@ -744,6 +749,10 @@
                             <input id="rPhoto" type="file" accept="image/*">
                             <div class="muted small">A fotografia identifica a conta e será usada no perfil e no chat.</div>
                         </div>
+                        <div class="captcha-box">
+                            <div class="captcha-label">Verificação de segurança</div>
+                            <div id="registerTurnstile" class="cf-turnstile"></div>
+                        </div>
                         <button class="btn full" type="submit">Criar conta</button>
                         <div class="auth-switch">
                             Já tem conta? <button type="button" onclick="authMode('login')">Entrar</button>
@@ -757,6 +766,10 @@
                             <label>Telefone</label>
                             <input id="fpPhone" inputmode="tel" placeholder="900 000 001">
                         </div>
+                        <div class="captcha-box">
+                            <div class="captcha-label">Verificação de segurança</div>
+                            <div id="recoveryTurnstile" class="cf-turnstile"></div>
+                        </div>
                         <button class="btn full" onclick="requestRecovery()">Enviar código</button>
                         <div id="recoveryCodeBox" class="hidden">
                             <div class="field">
@@ -767,6 +780,10 @@
                                 <label>Nova palavra-passe</label>
                                 <input id="fpNew" type="password" minlength="8">
                                 <button type="button" aria-label="Mostrar palavra-passe" onclick="togglePassword('fpNew',this)">👁</button>
+                            </div>
+                            <div class="captcha-box">
+                                <div class="captcha-label">Verificação de segurança</div>
+                                <div id="resetTurnstile" class="cf-turnstile"></div>
                             </div>
                             <button class="btn full" onclick="resetPassword()">Alterar palavra-passe</button>
                         </div>
@@ -907,11 +924,74 @@
                     throw Error(d.detail || d.message || `Erro ${r.status}`);
                 return d
             }
-            function captchaToken(id) { return ''; }
-            // CAPTCHA/Turnstile desativado nesta versão; mantido apenas por compatibilidade com código antigo.
-            function resetCaptchas() {}
-            async function renderCaptchas(ids=[]) { return; }
-            function renderVisibleCaptcha(id) { return; }
+            const TURNSTILE_WIDGETS = {};
+            let TURNSTILE_SITE_KEY = '';
+
+            function captchaToken(id) {
+                try {
+                    const widget = TURNSTILE_WIDGETS[id];
+                    return window.turnstile && widget !== undefined ? (window.turnstile.getResponse(widget) || '') : '';
+                } catch (e) {
+                    return '';
+                }
+            }
+
+            function resetCaptchas() {
+                try {
+                    Object.values(TURNSTILE_WIDGETS).forEach(widget => {
+                        if (window.turnstile && widget !== undefined) window.turnstile.reset(widget);
+                    });
+                } catch (e) {}
+            }
+
+            async function getTurnstileSiteKey() {
+                if (TURNSTILE_SITE_KEY) return TURNSTILE_SITE_KEY;
+                try {
+                    const response = await fetch('/api/public-config', { cache: 'no-store' });
+                    if (!response.ok) return '';
+                    const cfg = await response.json();
+                    TURNSTILE_SITE_KEY = typeof cfg.turnstile === 'string' ? cfg.turnstile : (cfg.turnstile?.sitekey || '');
+                    return TURNSTILE_SITE_KEY;
+                } catch (e) {
+                    console.warn('Não foi possível obter a configuração da verificação:', e);
+                    return '';
+                }
+            }
+
+            async function renderCaptchas(ids=['loginTurnstile']) {
+                const siteKey = await getTurnstileSiteKey();
+                if (!siteKey) return;
+                if (!window.turnstile) {
+                    setTimeout(() => renderCaptchas(ids), 500);
+                    return;
+                }
+                ids.forEach(id => {
+                    const el = $(id);
+                    if (!el) return;
+                    const visible = getComputedStyle(el.closest('.captcha-box') || el).display !== 'none';
+                    if (!visible) return;
+                    if (TURNSTILE_WIDGETS[id] !== undefined) {
+                        try { window.turnstile.reset(TURNSTILE_WIDGETS[id]); return; } catch (e) { delete TURNSTILE_WIDGETS[id]; }
+                    }
+                    el.innerHTML = '';
+                    try {
+                        TURNSTILE_WIDGETS[id] = window.turnstile.render(el, {
+                            sitekey: siteKey,
+                            callback: function() {},
+                            'expired-callback': function() {},
+                            'error-callback': function() {}
+                        });
+                    } catch (e) {
+                        console.warn('Erro ao renderizar verificação:', e);
+                    }
+                });
+            }
+
+            function renderVisibleCaptcha(id) {
+                const el = $(id);
+                if (!el) return;
+                renderCaptchas([id]);
+            }
 
             function authMode(m) {
                 $('recoveryBox').classList.add('hidden');
@@ -953,6 +1033,7 @@
                         body: JSON.stringify({
                             phone: $('loginPhone').value,
                             password: $('loginPassword').value,
+                            turnstile_token: captchaToken('loginTurnstile')
                         })
                     });
                     S.token = d.access_token;
@@ -989,11 +1070,15 @@
                         method: 'POST',
                         body: JSON.stringify({
                             phone,
+                            turnstile_token: captchaToken('recoveryTurnstile')
                         })
                     });
                     $('recoveryCodeBox').classList.remove('hidden');
                     $('fpCode').value = '';
                     $('fpNew').value = '';
+                    $('resetTurnstile').innerHTML = '';
+                    delete TURNSTILE_WIDGETS.resetTurnstile;
+                    renderCaptchas(['resetTurnstile']);
                     $('authMsg').innerHTML = '';
                     if (d.demo_code) {
                         $('recoveryCodeBox').insertAdjacentHTML('afterbegin', '<div class="notice ok recovery-result"><b>Código de demonstração:</b> ' + esc(d.demo_code) + '</div>')
@@ -1014,6 +1099,7 @@
                             phone: $('fpPhone').value,
                             code: $('fpCode').value,
                             new_password: $('fpNew').value,
+                            turnstile_token: captchaToken('resetTurnstile')
                         })
                     });
                     $('authMsg').innerHTML = '<div class="notice ok">' + esc(d.message) + ' Pode entrar com a nova palavra-passe.</div>';
@@ -1480,6 +1566,7 @@
             function closeModal() {
                 $('modal').classList.remove('open')
             }
+            renderCaptchas(['loginTurnstile']);
             if ('serviceWorker'in navigator)
                 navigator.serviceWorker.register('/sw.js?v=16.2.2').catch( () => {}
                 );
@@ -1716,7 +1803,7 @@
     .rating{letter-spacing:1px;color:#c9752f;font-weight:800}.verified{color:var(--g);font-weight:800}
     .compact-modal .sheet{height:50vh;max-height:50vh;border-radius:20px;align-self:center}
     .compact-modal{align-items:center}
-    .header-menu-row{display:flex;justify-content:flex-end;align-items:center;padding-top:6px}.scope-dots{min-width:46px;min-height:42px;padding:6px 12px;font-size:22px;line-height:1}.dot-menu{position:fixed;right:10px;top:112px;width:min(330px,calc(100vw - 20px));background:#fff;border:1px solid var(--line);border-radius:16px;box-shadow:0 12px 30px #19301825;z-index:80;padding:8px;display:none}
+    .header-menu-row{display:flex;justify-content:flex-end;align-items:center;padding-top:6px}.scope-dots{min-width:46px;min-height:42px;padding:6px 12px;font-size:22px;line-height:1}.captcha-box{margin:10px 0 12px;padding:10px 8px;border:1px solid var(--line);border-radius:12px;background:#f7faf5}.captcha-label{font-size:11px;color:var(--muted);font-weight:700;text-align:center;margin-bottom:6px}.cf-turnstile{display:flex;justify-content:center;min-height:65px}.dot-menu{position:fixed;right:10px;top:112px;width:min(330px,calc(100vw - 20px));background:#fff;border:1px solid var(--line);border-radius:16px;box-shadow:0 12px 30px #19301825;z-index:80;padding:8px;display:none}
     .dot-menu.open{display:block!important}.dot-menu button{width:100%;text-align:left;border:0;background:white;padding:11px;border-radius:10px;font:inherit}.dot-menu button:hover{background:#edf4e9}
   `;
                 document.head.appendChild(style);
@@ -1849,6 +1936,7 @@
                     profile_photo_filename: photo.filename,
                     profile_photo_content_type: photo.content_type,
                     profile_photo_data_base64: photo.data_base64,
+                    turnstile_token: captchaToken('registerTurnstile')
                 };
                 try {
                     await api('/api/auth/register', {
@@ -3930,14 +4018,7 @@
                 }
                 , 120);
             }
-            // Idiomas disponíveis — mantido antes de qualquer função que use LANGS.
-const LANGS = Object.freeze({
-    pt: 'Português',
-    en: 'English',
-    fr: 'Français',
-    es: 'Español'
-});
-window.setLanguage = function(k) {
+            window.setLanguage = function(k) {
                 if (!LANGS[k])
                     return;
                 lang = k;
