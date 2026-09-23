@@ -99,8 +99,8 @@ async function renderCaptchas() {
 
     const cfg = await response.json();
 
-    // Lê diretamente a propriedade do backend
-    const sitekey = cfg.turnstile_site_key || cfg.turnstile || cfg.sitekey || '';
+    // Procura dentro do objeto cfg.turnstile primeiro
+    const sitekey = cfg.turnstile?.turnstile_site_key || cfg.turnstile_site_key || cfg.turnstile || '';
 
     if (!sitekey) {
       console.warn('Sitekey do Turnstile não encontrada em /api/public-config');
@@ -108,7 +108,7 @@ async function renderCaptchas() {
     }
 
     const render = () => {
-      const el = document.getElementById('loginTurnstile') || $('#loginTurnstile');
+      const el = document.getElementById('loginTurnstile') || $('#loginTurnstile')[0];
       if (window.turnstile && el) {
         el.innerHTML = '';
         window.turnstile.render(el, { sitekey: String(sitekey) });
