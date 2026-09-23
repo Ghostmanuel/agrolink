@@ -306,8 +306,7 @@ async function settingsPanel() {
 
   // 3. Remoção do '#' para ser compatível com a função $(id)
   if ($('modalBody')) {$('modalBody').innerHTML = html + `<button class="btn full" style="margin-top:12px;" onclick="closeModal()">Fechar</button>`;
-  openModal('#modal');
-  
+  openModal('#modal');  
 }
   
 function downloadReport(){const blob=new Blob([JSON.stringify(window._agroReport||{},null,2)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='agrolink-relatorio.json';a.click();URL.revokeObjectURL(a.href)}
@@ -688,7 +687,7 @@ setTimeout(() => {
     renderAll();
   }
 }, 50);
-}
+  }}
 </script>
 </body>
 </html>
