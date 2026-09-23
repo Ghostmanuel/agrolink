@@ -113,31 +113,37 @@ async function renderCaptchas() {
       console.warn('Sitekey do Turnstile não encontrada em /api/public-config');
       return;
     }
-
     const render = () => {
-  const el = document.getElementById('loginTurnstile') || $('#loginTurnstile')[0];
-  if (window.turnstile && el) {
-    if (el.getAttribute('data-turnstile-widget-id')) {
-      try {
-        window.turnstile.remove(el.getAttribute('data-turnstile-widget-id'));
-      } catch (e) {}
-    }
-    el.innerHTML = '';
-    const widgetId = window.turnstile.render(el, { sitekey: String(sitekey) });
-    el.setAttribute('data-turnstile-widget-id', widgetId);
-  }
-};
+      const el = document.getElementById('loginTurnstile') || $('#loginTurnstile')[0];
+      
+      if (window.turnstile && el) {
+        // 1. Obtém o ID do widget antigo, se existir
+        const oldWidgetId = el.getAttribute('data-turnstile-widget-id');
 
-    if (window.turnstile) {
-      render();
-    } else {
-      window.onLoadTurnstileCallback = render;
-    }
-  } catch (e) {
-    console.warn('Erro ao carregar captcha:', e);
-  }
-}
+        // 2. Tenta remover o widget via API do Turnstile ANTES de mexer no DOM
+        if (oldWidgetId) {
+          try {
+            window.turnstile.remove(oldWidgetId);
+          } catch (e) {
+            // Ignora se já tiver sido removido automaticamente
+          }
+          el.removeAttribute('data-turnstile-widget-id');
+        }
 
+        // 3. Limpa o container DOM
+        el.innerHTML = '';
+
+        // 4. Renderiza o novo widget e guarda o ID
+        try {
+          const widgetId = window.turnstile.render(el, { sitekey: String(sitekey) });
+          if (widgetId) {
+            el.setAttribute('data-turnstile-widget-id', widgetId);
+          }
+        } catch (e) {
+          console.warn('Erro ao renderizar widget Turnstile:', e);
+        }
+      }
+    };
   
 function authMode(m){$('recoveryBox').classList.add('hidden');$('loginForm').classList.toggle('hidden',m!=='login');$('registerForm').classList.toggle('hidden',m!=='register');$('authMsg').innerHTML='';if(m==='register')roleFields()}
 function togglePassword(id,btn){const el=$(id);if(!el)return;el.type=el.type==='password'?'text':'password';btn.textContent=el.type==='password'?'👁':'🙈';}
