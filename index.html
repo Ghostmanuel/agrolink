@@ -105,35 +105,27 @@ async function renderCaptchas() {
     if (!response.ok) return;
 
     const cfg = await response.json();
-
-    // Procura dentro do objeto cfg.turnstile primeiro
     const sitekey = cfg.turnstile?.turnstile_site_key || cfg.turnstile_site_key || cfg.turnstile || '';
 
     if (!sitekey) {
       console.warn('Sitekey do Turnstile não encontrada em /api/public-config');
       return;
     }
+
     const render = () => {
       const el = document.getElementById('loginTurnstile') || $('#loginTurnstile')[0];
       
       if (window.turnstile && el) {
-        // 1. Obtém o ID do widget antigo, se existir
         const oldWidgetId = el.getAttribute('data-turnstile-widget-id');
-
-        // 2. Tenta remover o widget via API do Turnstile ANTES de mexer no DOM
         if (oldWidgetId) {
           try {
             window.turnstile.remove(oldWidgetId);
-          } catch (e) {
-            // Ignora se já tiver sido removido automaticamente
-          }
+          } catch (e) {}
           el.removeAttribute('data-turnstile-widget-id');
         }
 
-        // 3. Limpa o container DOM
         el.innerHTML = '';
 
-        // 4. Renderiza o novo widget e guarda o ID
         try {
           const widgetId = window.turnstile.render(el, { sitekey: String(sitekey) });
           if (widgetId) {
@@ -143,6 +135,19 @@ async function renderCaptchas() {
           console.warn('Erro ao renderizar widget Turnstile:', e);
         }
       }
+    };
+
+    if (window.turnstile) {
+      render();
+    } else {
+      window.onLoadTurnstileCallback = render;
+    }
+  } catch (e) {
+    console.warn('Erro ao carregar captcha:', e);
+  } // <- Certifique-se de fechar o catch
+}   // <- Certifique-se de fechar a função
+
+  
     
   
 function authMode(m){$('recoveryBox').classList.add('hidden');$('loginForm').classList.toggle('hidden',m!=='login');$('registerForm').classList.toggle('hidden',m!=='register');$('authMsg').innerHTML='';if(m==='register')roleFields()}
