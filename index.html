@@ -114,13 +114,19 @@ async function renderCaptchas() {
       return;
     }
 
-    const render = () => {
-      const el = document.getElementById('loginTurnstile') || $('#loginTurnstile')[0];
-      if (window.turnstile && el) {
-        el.innerHTML = '';
-        window.turnstile.render(el, { sitekey: String(sitekey) });
-      }
-    };
+    onst render = () => {
+  const el = document.getElementById('loginTurnstile') || $('#loginTurnstile')[0];
+  if (window.turnstile && el) {
+    if (el.getAttribute('data-turnstile-widget-id')) {
+      try {
+        window.turnstile.remove(el.getAttribute('data-turnstile-widget-id'));
+      } catch (e) {}
+    }
+    el.innerHTML = '';
+    const widgetId = window.turnstile.render(el, { sitekey: String(sitekey) });
+    el.setAttribute('data-turnstile-widget-id', widgetId);
+  }
+};
 
     if (window.turnstile) {
       render();
