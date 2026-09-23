@@ -1,52 +1,39 @@
-# EPYALINK
+# AgroLink Angola — MVP Completo
 
-Plataforma agrícola digital — **Do campo ao mercado, conectado.**
+## O que foi construído
+- API profissional em FastAPI
+- PostgreSQL via Docker
+- Autenticação com JWT
+- Registo de compradores, agricultores e transportadores
+- Marketplace
+- Publicação de produtos
+- Criação e consulta de pedidos
+- Interface web Streamlit para demonstração
+- Docker Compose
 
-## Estrutura canónica
-
-- `main.py` — aplicação FastAPI e endpoints.
-- `db.py` — SQLite, esquema e migrações de compatibilidade.
-- `security.py` — palavras-passe, hashes cegos e encriptação AES-GCM de dados sensíveis.
-- `schemas.py` — contratos Pydantic da API.
-- `config.py` — configuração exclusivamente por variáveis de ambiente.
-- `index.html` — frontend PWA mobile-first.
-- `manifest.json` — identidade PWA EPYALINK.
-- `sw.js` — cache do app shell; nunca cacheia `/api/` nem WebSockets.
-- `requirements.txt` — dependências usadas diretamente pelo código actual.
-
-## Arranque
-
+## Executar backend + PostgreSQL
 ```bash
-uvicorn main:app --host 0.0.0.0 --port $PORT
+docker compose up --build
 ```
 
-Para desenvolvimento local, pode usar `APP_ENV=development` e desactivar temporariamente o Turnstile no ambiente de teste.
+API: http://localhost:8000
+Swagger: http://localhost:8000/docs
 
-## Segurança
+## Executar interface
+Em outro terminal:
+```bash
+cd frontend
+pip install -r requirements.txt
+streamlit run streamlit_app.py
+```
 
-- Turnstile é validado no backend.
-- BI é armazenado cifrado com AES-GCM e acompanhado por hash cego para pesquisas.
-- Tokens JWT são validados no backend e as contas suspensas são rejeitadas.
-- Ficheiros privados exigem autorização no backend.
-- Recuperação de palavra-passe usa KambaSMS em produção; o modo demo deve permanecer desligado.
-- WebSockets exigem sessão válida e autorização para o pedido.
-- CORS é aberto apenas quando necessário; para ambientes com origens conhecidas, configure `CORS_ALLOW_ORIGINS`.
+## Observação
+Esta versão é um MVP funcional para demonstração e desenvolvimento. Antes de produção devem ser adicionados OTP por telefone, recuperação de conta, RBAC completo, pagamentos reais através de parceiros, USSD, GPS, armazenamento de imagens, notificações, auditoria, backups, monitorização, testes, proteção de dados e revisão de segurança.
 
-## Base de dados e armazenamento
-
-O projecto actual usa SQLite. Para uma instalação nova, defina uma `DATABASE_URL` persistente (por exemplo `sqlite:///./epyalink.db`). **Não altere a `DATABASE_URL` de uma instalação existente sem primeiro preservar a base de dados**, porque isso pode fazer a aplicação iniciar com uma base vazia.
-
-`FILE_STORAGE_DIR` também deve apontar para armazenamento persistente em produção; caso contrário, fotografias e documentos podem desaparecer quando o ambiente for recriado.
-
-## Recuperação por SMS
-
-Defina no ambiente de produção:
-
-- `PASSWORD_RESET_SMS_PROVIDER=kambasms`
-- `KAMBASMS_API_KEY=<segredo>`
-- `KAMBASMS_BASE_URL=https://api.kambasms.ao`
-- `PASSWORD_RESET_DEMO=false`
-- `PASSWORD_RESET_TTL_MINUTES=5`
-- `PASSWORD_RESET_RATE_LIMIT_PER_HOUR=3`
-
-Nunca coloque chaves ou segredos reais no repositório ou no chat.
+## Roadmap comercial
+1. Validar marketplace em uma província-piloto.
+2. Integrar transportadores.
+3. Integrar pagamentos.
+4. Adicionar USSD.
+5. Criar app Android/iOS consumindo a mesma API.
+6. Escalar infraestrutura conforme utilização.
