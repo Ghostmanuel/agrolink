@@ -307,33 +307,11 @@ async function settingsPanel() {
 
   // 3. Remoção do '#' para ser compatível com a função $(id)
   if ($('modalBody')) {$('modalBody').innerHTML = html + `<button class="btn full" style="margin-top:12px;" onclick="closeModal()">Fechar</button>`;
-  }
   openModal('#modal');
   } catch (err) {
     console.error(err);
   }
 }
-
-// Evento para fechar os menus de idioma ao clicar fora
-document.addEventListener('click', e => {
-  if (!e.target.closest('.lang-picker') && !e.target.closest('.app-lang')) {
-    document.querySelectorAll('.lang-panel').forEach(x => x.classList.remove('open'));
-  }
-});
-
-// Executa a inicialização após o carregamento da página
-setTimeout(() => {
-  if (typeof renderAll === 'function') {
-    renderAll();
-  }
-}, 50);
-</script>
-</body>
-</html>
- 
-}
-
-
   
 function downloadReport(){const blob=new Blob([JSON.stringify(window._agroReport||{},null,2)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='agrolink-relatorio.json';a.click();URL.revokeObjectURL(a.href)}
 async function saveSetting(k){try{const v=$('set_'+k).value;await api('/api/admin/settings/'+encodeURIComponent(k),{method:'PUT',body:JSON.stringify({value:v})});alert('Configuração guardada.')}catch(e){alert(e.message)}}
