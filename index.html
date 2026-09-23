@@ -674,11 +674,12 @@ adminPanel=async function(){$('adminPanel').classList.remove('hidden');try{const
     }
   };
 
-  // Evento para fechar os menus de idioma ao clicar fora
+ // Evento para fechar os menus de idioma ao clicar fora
 document.addEventListener('click', e => {
   if (!e.target.closest('.lang-picker') && !e.target.closest('.app-lang')) {
     document.querySelectorAll('.lang-panel').forEach(x => x.classList.remove('open'));
   }
+});
 
 // Executa a inicialização após o carregamento da página
 setTimeout(() => {
