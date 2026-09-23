@@ -98,13 +98,20 @@ async function renderCaptchas() {
     if (!response.ok) return;
 
     const cfg = await response.json();
+    console.log('Resposta da API public-config:', cfg); // 👈 ADICIONE ESTA LINHA
+
+    // Busca a sitekey navegando pelas propriedades possíveis do objeto
+    let sitekey = '';
     
-    // Extração ultra-segura da sitekey (força o resultado a ser sempre STRING)
-    let sitekey = cfg.turnstile;
-    if (typeof sitekey === 'object' && sitekey !== null) {
-      sitekey = sitekey.sitekey || sitekey.siteKey || sitekey.key || '';
+    if (typeof cfg.turnstile === 'string') {
+      sitekey = cfg.turnstile;
+    } else if (typeof cfg.turnstile === 'object' && cfg.turnstile !== null) {
+      sitekey = cfg.turnstile.sitekey || cfg.turnstile.siteKey || cfg.turnstile.key || '';
     }
-    sitekey = String(sitekey || '').trim();
+    
+    if (!sitekey) {
+      sitekey = cfg.sitekey || cfg.siteKey || cfg.turnstileSiteKey || '';
+    }
 
     if (!sitekey) {
       console.warn('Sitekey do Turnstile não encontrada em /api/public-config');
@@ -115,7 +122,7 @@ async function renderCaptchas() {
       const el = document.getElementById('loginTurnstile') || $('#loginTurnstile');
       if (window.turnstile && el) {
         el.innerHTML = '';
-        window.turnstile.render(el, { sitekey: sitekey });
+        window.turnstile.render(el, { sitekey: String(sitekey) });
       }
     };
 
