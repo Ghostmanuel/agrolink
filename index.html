@@ -104,25 +104,25 @@ async function renderCaptchas() {
 
     if (!siteKey) return;
 
-    const render = () => {
-      const container = $('loginTurnstile');
-      if (window.turnstile && container) {
-        // Limpa o contêiner antes de renderizar para evitar duplicações
-        container.innerHTML = ''; 
-        turnstile.render(container, { sitekey: siteKey });
-      }
-    };
-
-    // Renderiza diretamente se já carregou ou aguarda o evento
-    if (window.turnstile) {
-      render();
-    } else {
-      window.onloadTurnstileCallback = render;
+onst render = () => {
+    const el = document.getElementById('loginTurnstile') || $('#loginTurnstile');
+    if (window.turnstile && el) {
+      el.innerHTML = '';
+      window.turnstile.render(el, { sitekey: sitekey });
     }
-  } catch (e) {
-    console.warn('Erro ao carregar captcha:', e);
+  };
+
+  // Renderiza diretamente se já carregou ou aguarda o evento
+  if (window.turnstile) {
+    render();
+  } else {
+    window.onLoadTurnstileCallback = render;
   }
+ }
+} catch (e) {
+  console.warn('Erro ao carregar captcha:', e);
 }
+
   
 function authMode(m){$('recoveryBox').classList.add('hidden');$('loginForm').classList.toggle('hidden',m!=='login');$('registerForm').classList.toggle('hidden',m!=='register');$('authMsg').innerHTML='';if(m==='register')roleFields()}
 function togglePassword(id,btn){const el=$(id);if(!el)return;el.type=el.type==='password'?'text':'password';btn.textContent=el.type==='password'?'👁':'🙈';}
