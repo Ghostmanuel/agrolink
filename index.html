@@ -3,14 +3,7 @@
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>EPYALINK — Do campo ao mercado, conectado.</title>
-  <script>
-    window.onLoadTurnstileCallback = function (){
-      if (typeof renderCaptchas == 'function'){
-        renderCaptchas();
-      }
-    }
- </script>
-<script src="https://challenges.cloudflare.com/turnstile/v0/api.js?onload=onLoadTurnstileCallback&render=explicit" async defer></script>
+<script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
 <link rel="manifest" href="/manifest.json"><meta name="theme-color" content="#2F6B3A"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="default"><link rel="apple-touch-icon" href="/icon-192.png">
 <style>
 :root{--g:#2f6b3a;--gd:#1e4a28;--o:#c9752f;--bg:#f7f8f3;--card:#fff;--txt:#16231a;--muted:#667267;--line:#dde4d8;--danger:#b4432e}*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--txt);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}#app{max-width:520px;margin:auto;min-height:100vh;background:var(--bg)}header{position:sticky;top:0;z-index:10;background:rgba(255,255,255,.96);backdrop-filter:blur(12px);border-bottom:1px solid var(--line);padding:10px 14px}.brand{position:relative;display:flex;align-items:center;gap:10px;min-height:52px;display:flex;align-items:center;gap:10px}.brand img{width:48px;height:48px;object-fit:contain;border-radius:12px}.brand b{font-size:18px}.brand small{display:block;color:var(--g)}main{padding:14px 14px 100px}.screen{display:none}.screen.active{display:block}.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:14px;margin-bottom:12px;box-shadow:0 2px 10px #1930180d}.row{display:flex;gap:8px;align-items:center}.between{justify-content:space-between}.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}.field{margin:9px 0}.field label{font-size:12px;color:var(--muted);display:block;margin-bottom:5px}.field input,.field select,.field textarea{width:100%;padding:11px;border:1px solid var(--line);border-radius:10px;background:#fff;font:inherit}.field textarea{min-height:80px}.btn{border:0;border-radius:11px;padding:11px 13px;background:var(--g);color:white;font-weight:700;cursor:pointer}.btn.secondary{background:white;color:var(--g);border:1px solid var(--g)}.btn.orange{background:var(--o)}.btn.danger{background:var(--danger)}.btn.full{width:100%}.muted{color:var(--muted);font-size:13px}.price{font-weight:800;color:var(--gd);font-size:18px}.tag{display:inline-block;background:#edf4e9;color:var(--gd);border-radius:999px;padding:4px 8px;font-size:11px;margin:2px}.search{display:flex;gap:8px}.search input{flex:1;padding:12px;border:1px solid var(--line);border-radius:12px}.tabs{display:flex;gap:7px;overflow:auto;margin-bottom:12px}.tabs button{white-space:nowrap;border:1px solid var(--line);background:white;border-radius:999px;padding:8px 11px}.tabs button.active{background:var(--g);color:white}.bottom{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:min(520px,100%);display:flex;background:white;border-top:1px solid var(--line);padding:8px 4px calc(8px + env(safe-area-inset-bottom));z-index:20}.bottom button{flex:1;border:0;background:none;color:var(--muted);font-size:11px}.bottom button b{display:block;font-size:19px}.bottom button.active{color:var(--g)}.hidden{display:none!important}.notice{padding:10px;border-radius:10px;background:#fff4dc;margin:10px 0;font-size:13px}.ok{background:#eaf6ea}.error{background:#fdecea;color:#8b2415}.product img{width:100%;height:150px;object-fit:cover;border-radius:12px;background:#eef2ea}.auth{padding:22px 16px}.auth .logo{width:150px;height:150px;object-fit:contain;display:block;margin:10px auto}.small{font-size:11px}.stat{font-size:24px;font-weight:800}.modal{position:fixed;inset:0;background:#0008;display:none;z-index:50;align-items:flex-end}.modal.open{display:flex}.sheet{background:white;width:min(520px,100%);border-radius:20px 20px 0 0;padding:18px;max-height:90vh;overflow:auto}.chat{max-height:50vh;overflow:auto}.msg{padding:8px 10px;border-radius:12px;background:#edf2ea;margin:6px 0}.mine{background:#dcefdc;margin-left:28px}.right{margin-left:auto}
@@ -47,7 +40,7 @@
     <form id="loginForm">
       <div class="field"><label>Telefone</label><input id="loginPhone" inputmode="tel" autocomplete="tel" placeholder="900 000 001" required></div>
       <div class="field auth-eye"><label>Palavra-passe</label><input id="loginPassword" type="password" autocomplete="current-password" required><button type="button" aria-label="Mostrar palavra-passe" onclick="togglePassword('loginPassword',this)">👁</button></div>
-      <div id="loginTurnstile" class="cf-turnstile"></div>
+      <div class="captcha-box"><div class="captcha-label">Verificação de segurança</div><div id="loginTurnstile" class="cf-turnstile"></div></div>
       <button class="btn full" type="submit">Entrar</button>
       <button type="button" class="btn secondary full" style="margin-top:8px" onclick="openRecovery()">Esqueci a palavra-passe</button>
       <div class="auth-switch">Ainda não tem conta? <button type="button" onclick="authMode('register')">Criar conta</button></div>
@@ -64,7 +57,7 @@
       <div id="companyFields" class="hidden"><div class="field"><label>Nome da empresa transportadora</label><input id="rTransportCompany" placeholder="Ex.: Transportes ABC, Lda."></div></div>
       <div id="transFields" class="hidden"><div class="field"><label>BI</label><input id="rBI" placeholder="Número do BI"></div></div>
       <div class="field"><label>Fotografia de perfil</label><input id="rPhoto" type="file" accept="image/*"><div class="muted small">A fotografia identifica a conta e será usada no perfil e no chat.</div></div>
-      <div id="registerTurnstile" class="cf-turnstile"></div>
+      <div class="captcha-box"><div class="captcha-label">Verificação de segurança</div><div id="registerTurnstile" class="cf-turnstile"></div></div>
       <button class="btn full" type="submit">Criar conta</button>
       <div class="auth-switch">Já tem conta? <button type="button" onclick="authMode('login')">Entrar</button></div>
     </form>
@@ -73,15 +66,14 @@
     <div id="recoveryBox" class="card hidden">
       <h3>Recuperar palavra-passe</h3><p class="muted">Informe o telefone da conta.</p>
       <div class="field"><label>Telefone</label><input id="fpPhone" inputmode="tel" placeholder="900 000 001"></div>
-      <div id="recoveryTurnstile" class="cf-turnstile"></div>
+      <div class="captcha-box"><div class="captcha-label">Verificação de segurança</div><div id="recoveryTurnstile" class="cf-turnstile"></div></div>
       <button class="btn full" onclick="requestRecovery()">Enviar código</button>
-      <div id="recoveryCodeBox" class="hidden"><div class="field"><label>Código recebido</label><input id="fpCode" inputmode="numeric" maxlength="6"></div><div class="field auth-eye"><label>Nova palavra-passe</label><input id="fpNew" type="password" minlength="8"><button type="button" aria-label="Mostrar palavra-passe" onclick="togglePassword('fpNew',this)">👁</button></div><div id="resetTurnstile" class="cf-turnstile"></div><button class="btn full" onclick="resetPassword()">Alterar palavra-passe</button></div>
+      <div id="recoveryCodeBox" class="hidden"><div class="field"><label>Código recebido</label><input id="fpCode" inputmode="numeric" maxlength="6"></div><div class="field auth-eye"><label>Nova palavra-passe</label><input id="fpNew" type="password" minlength="8"><button type="button" aria-label="Mostrar palavra-passe" onclick="togglePassword('fpNew',this)">👁</button></div><div class="captcha-box"><div class="captcha-label">Verificação de segurança</div><div id="resetTurnstile" class="cf-turnstile"></div></div><button class="btn full" onclick="resetPassword()">Alterar palavra-passe</button></div>
       <button class="btn secondary full" style="margin-top:8px" onclick="closeRecovery()">Voltar</button>
     </div>
     <div class="auth-note">EPYALINK</div>
 </section>
-  <div class =
-<header id="top" class="hidden"><div class="brand"><img src="/LogoEpyalink.png"><div><b>EPYALINK</b><small>Mercado agrícola</small></div><button id="scopeDots" class="btn secondary right hamburger-menu" aria-label="Abrir menu" title="Menu">☰</button></div></header>
+<header id="top" class="hidden"><div class="brand"><img src="/LogoEpyalink.png"><div class="brand-copy"><b>EPYALINK</b><small>Mercado agrícola</small></div></div><div class="header-menu-row"><button id="scopeDots" class="btn secondary scope-dots" type="button" aria-label="Abrir menu" title="Menu">☰</button></div></header>
 <main id="main" class="hidden">
 <section id="market" class="screen active"><div class="row between"><div><h2>Mercado</h2><div class="muted">Encontre produtos de produtores em Angola.</div></div><button class="btn orange" onclick="aiInsights()">IA</button></div><div class="search"><input id="search" placeholder="Pesquisar produto, produtor ou local"><button class="btn" onclick="loadProducts()">Pesquisar</button></div><div id="cats" class="tabs"></div><div id="products"></div></section>
 <section id="orders" class="screen"><h2>Pedidos</h2><div id="ordersList"></div></section>
@@ -92,18 +84,6 @@
 <div id="modal" class="modal"><div class="sheet"><div class="row between"><h3 id="modalTitle">EPYALINK</h3><button class="btn secondary" onclick="closeModal()">Fechar</button></div><div id="modalBody"></div></div></div>
 </div>
 <script>
- document.addEventListener('DOMContentLoaded', function() {
-    const accountBtn = document.getElementById('accountMenu') || document.querySelector('.brand');
-    if (accountBtn) {
-      accountBtn.addEventListener('click', function() {
-        if (typeof show === 'function') {
-          show('profile');
-        }
-      });
-    }
-  });
-
-  
 const S={token:localStorage.getItem('epyalink_token')||localStorage.getItem('agrolink_token')||'',role:localStorage.getItem('epyalink_role')||localStorage.getItem('agrolink_role')||'',name:localStorage.getItem('epyalink_name')||localStorage.getItem('agrolink_name')||'',cat:null};
 const $=id=>document.getElementById(id); const esc=s=>String(s??'').replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]));
 async function api(path,opts={}){opts.headers={...(opts.headers||{}), 'Content-Type':'application/json'};if(S.token)opts.headers.Authorization='Bearer '+S.token;const r=await fetch(path,opts);let d={};try{d=await r.json()}catch{}if(!r.ok)throw Error(d.detail||d.message||`Erro ${r.status}`);return d}
@@ -111,68 +91,62 @@ const TURNSTILE_WIDGETS={};
 function captchaToken(id){try{return window.turnstile&&TURNSTILE_WIDGETS[id]?turnstile.getResponse(TURNSTILE_WIDGETS[id]):''}catch{return ''}}
 function resetCaptchas(){try{Object.values(TURNSTILE_WIDGETS).forEach(w=>window.turnstile&&turnstile.reset(w))}catch{}}
 
-async function renderCaptchas() {
+async function renderCaptchas(ids=['loginTurnstile']) {
   try {
     const response = await fetch('/api/public-config');
     if (!response.ok) return;
-
     const cfg = await response.json();
-    const sitekey = cfg.turnstile?.turnstile_site_key || cfg.turnstile_site_key || cfg.turnstile || '';
-
-    if (!sitekey) {
-      console.warn('Sitekey do Turnstile não encontrada em /api/public-config');
+    const siteKey = typeof cfg.turnstile === 'string' ? cfg.turnstile : (cfg.turnstile?.sitekey || '');
+    if (!siteKey) return;
+    if (!window.turnstile) {
+      window.onloadTurnstileCallback = () => renderCaptchas(ids);
       return;
     }
-
-    const render = () => {
-      const el = document.getElementById('loginTurnstile') || $('#loginTurnstile')[0];
-      
-      if (window.turnstile && el) {
-        const oldWidgetId = el.getAttribute('data-turnstile-widget-id');
-        if (oldWidgetId) {
-          try {
-            window.turnstile.remove(oldWidgetId);
-          } catch (e) {}
-          el.removeAttribute('data-turnstile-widget-id');
-        }
-
-        el.innerHTML = '';
-
-        try {
-          const widgetId = window.turnstile.render(el, { sitekey: String(sitekey) });
-          if (widgetId) {
-            el.setAttribute('data-turnstile-widget-id', widgetId);
-          }
-        } catch (e) {
-          console.warn('Erro ao renderizar widget Turnstile:', e);
-        }
+    ids.forEach(id => {
+      const el = $(id);
+      if (!el || el.offsetParent === null) return;
+      if (TURNSTILE_WIDGETS[id] !== undefined) {
+        try { turnstile.reset(TURNSTILE_WIDGETS[id]); return; } catch {}
       }
-    };
-
-    if (window.turnstile) {
-      render();
-    } else {
-      window.onLoadTurnstileCallback = render;
-    }
+      el.innerHTML = '';
+      try {
+        TURNSTILE_WIDGETS[id] = turnstile.render(el, {
+          sitekey: siteKey,
+          callback: () => {},
+          'expired-callback': () => {},
+          'error-callback': () => {}
+        });
+      } catch (e) {
+        console.warn('Erro ao renderizar verificação:', e);
+      }
+    });
   } catch (e) {
-    console.warn('Erro ao carregar captcha:', e);
-  } // <- Certifique-se de fechar o catch
-}   // <- Certifique-se de fechar a função
+    console.warn('Erro ao carregar verificação:', e);
+  }
+}
+
+function renderVisibleCaptcha(id){
+  const el=$(id);
+  if(!el || !window.turnstile) return;
+  const style=getComputedStyle(el.closest('.captcha-box')||el);
+  if(style.display==='none') return;
+  if(TURNSTILE_WIDGETS[id]===undefined){ renderCaptchas(); }
+}
 
   
-    
-  
-function authMode(m){$('recoveryBox').classList.add('hidden');$('loginForm').classList.toggle('hidden',m!=='login');$('registerForm').classList.toggle('hidden',m!=='register');$('authMsg').innerHTML='';if(m==='register')roleFields()}
+function authMode(m){$('recoveryBox').classList.add('hidden');$('loginForm').classList.toggle('hidden',m!=='login');$('registerForm').classList.toggle('hidden',m!=='register');$('authMsg').innerHTML='';if(m==='register'){roleFields();setTimeout(()=>renderCaptchas(['registerTurnstile']),60)}else{setTimeout(()=>renderCaptchas(['loginTurnstile']),60)}}
 function togglePassword(id,btn){const el=$(id);if(!el)return;el.type=el.type==='password'?'text':'password';btn.textContent=el.type==='password'?'👁':'🙈';}
 function roleFields(){const r=$('rRole').value;const seller=r==='seller';const company=r==='transport_company';const privateT=r==='private_transporter'||r==='transporter';$('sellerFields').classList.toggle('hidden',!seller);$('companyFields').classList.toggle('hidden',!company);$('transFields').classList.toggle('hidden',!privateT);$('rCompany').required=false;$('rFarm').required=false;$('rTransportCompany').required=company;$('rBI').required=privateT;}
 $('loginForm').onsubmit=async e=>{e.preventDefault();try{const d=await api('/api/auth/login',{method:'POST',body:JSON.stringify({phone:$('loginPhone').value,password:$('loginPassword').value,turnstile_token:captchaToken('loginTurnstile')})});S.token=d.access_token;S.role=d.role;S.name=d.full_name;localStorage.setItem('epyalink_token',S.token);localStorage.setItem('epyalink_role',S.role);localStorage.setItem('epyalink_name',S.name);start()}catch(err){$('authMsg').innerHTML='<div class="notice error">'+esc(err.message)+'</div>';resetCaptchas()}}
-function openRecovery(){$('loginForm').classList.add('hidden');$('registerForm').classList.add('hidden');$('recoveryBox').classList.remove('hidden');$('authMsg').innerHTML='';renderCaptchas();}
+
+function openRecovery(){$('loginForm').classList.add('hidden');$('registerForm').classList.add('hidden');$('recoveryBox').classList.remove('hidden');$('authMsg').innerHTML='';renderCaptchas(['recoveryTurnstile']);}
 function closeRecovery(){$('recoveryBox').classList.add('hidden');$('loginForm').classList.remove('hidden');}
-async function requestRecovery(){try{const phone=$('fpPhone').value.trim();if(!phone){throw new Error('Informe o telefone da conta.')}const d=await api('/api/auth/forgot-password',{method:'POST',body:JSON.stringify({phone,turnstile_token:captchaToken('recoveryTurnstile')})});$('recoveryCodeBox').classList.remove('hidden');$('fpCode').value='';$('fpNew').value='';$('resetTurnstile').innerHTML='';delete TURNSTILE_WIDGETS.resetTurnstile;renderCaptchas();$('authMsg').innerHTML='';if(d.demo_code){$('recoveryCodeBox').insertAdjacentHTML('afterbegin','<div class="notice ok recovery-result"><b>Código de demonstração:</b> '+esc(d.demo_code)+'</div>')}else{$('recoveryCodeBox').insertAdjacentHTML('afterbegin','<div class="notice ok recovery-result">'+esc(d.message||'Código enviado. Verifique o seu telefone.')+'</div>')}}catch(e){$('authMsg').innerHTML='<div class="notice error">'+esc(e.message)+'</div>'}finally{resetCaptchas()}}
+async function requestRecovery(){try{const phone=$('fpPhone').value.trim();if(!phone){throw new Error('Informe o telefone da conta.')}const d=await api('/api/auth/forgot-password',{method:'POST',body:JSON.stringify({phone,turnstile_token:captchaToken('recoveryTurnstile')})});$('recoveryCodeBox').classList.remove('hidden');$('fpCode').value='';$('fpNew').value='';$('resetTurnstile').innerHTML='';delete TURNSTILE_WIDGETS.resetTurnstile;renderCaptchas(['resetTurnstile']);$('authMsg').innerHTML='';if(d.demo_code){$('recoveryCodeBox').insertAdjacentHTML('afterbegin','<div class="notice ok recovery-result"><b>Código de demonstração:</b> '+esc(d.demo_code)+'</div>')}else{$('recoveryCodeBox').insertAdjacentHTML('afterbegin','<div class="notice ok recovery-result">'+esc(d.message||'Código enviado. Verifique o seu telefone.')+'</div>')}}catch(e){$('authMsg').innerHTML='<div class="notice error">'+esc(e.message)+'</div>'}finally{resetCaptchas()}}
 async function resetPassword(){try{const d=await api('/api/auth/reset-password',{method:'POST',body:JSON.stringify({phone:$('fpPhone').value,code:$('fpCode').value,new_password:$('fpNew').value,turnstile_token:captchaToken('resetTurnstile')})});$('authMsg').innerHTML='<div class="notice ok">'+esc(d.message)+' Pode entrar com a nova palavra-passe.</div>';closeRecovery()}catch(e){$('authMsg').innerHTML='<div class="notice error">'+esc(e.message)+'</div>'}finally{resetCaptchas()}}
 function start(){$('auth').classList.add('hidden');$('top').classList.remove('hidden');$('main').classList.remove('hidden');$('nav').classList.remove('hidden');loadCategories();loadProducts();loadOrders();loadProfile();if(((S.role==='transporter'||S.role==='private_transporter'||S.role==='transport_company')||S.role==='private_transporter'||S.role==='transport_company'))loadTransporters()}
 function logout(){localStorage.clear();location.reload()}
-window.show=function(id){var targetId=id||'market';var screens=document.querySelectorAll('.screen');screens.forEach(function(s){s.classList.add('hidden');});var target=document.getElementById(targetId);if(!target){target=document.querySelector('.screen:not(#auth)');}if(!target&&screens.length>0){target=screens[0];}if(target){target.classList.remove('hidden');}if(typeof scopeDotClose==='function')scopeDotClose();};
+function show(id){document.querySelectorAll('.screen').forEach(x=>x.classList.remove('active'));$(id).classList.add('active');document.querySelectorAll('.bottom button').forEach(x=>x.classList.remove('active'));scopeDotClose();if(id==='market')loadProducts();if(id==='orders')loadOrders();if(id==='transport')loadTransporters();if(id==='profile')loadProfile()}
+async function loadCategories(){try{const rows=await api('/api/categories');$('cats').innerHTML='<button class="active" onclick="S.cat=null;loadProducts()">Todos</button>'+rows.map(c=>`<button onclick="S.cat=${c.id};loadProducts()">${esc(c.name)}</button>`).join('')}catch{}}
 async function loadProducts(){try{let q=$('search').value||'';let url='/api/products?q='+encodeURIComponent(q);if(S.cat)url+='&category_id='+S.cat;const rows=await api(url);$('products').innerHTML=rows.length?rows.map(p=>`<article class="card product"><img src="${esc(p.photo||'/LogoEpyalink.png')}" onerror="this.src='/LogoEpyalink.png'"><div class="row between"><div><h3>${esc(p.name)}</h3><div class="muted">${esc(p.category_name||'Sem categoria')} · ${esc(p.location||'')}</div></div><span class="price">${Number(p.price_kz).toLocaleString('pt-AO')} Kz</span></div><p class="muted">${esc(p.description||'')}</p><span class="tag">${esc(p.quantity)} ${esc(p.unit)}</span><span class="tag">${esc(p.company_name||p.farm_name||p.seller_name)}</span><button class="btn full" style="margin-top:10px" onclick="buy(${p.id})">Comprar</button></article>`).join(''):'<div class="notice">Nenhum produto encontrado.</div>'}catch(err){$('products').innerHTML='<div class="notice error">'+esc(err.message)+'</div>'}}
 async function buy(id){const q=prompt('Quantidade desejada:');if(!q||Number(q)<=0)return;const address=prompt('Endereço de entrega:');if(!address)return;try{const d=await api('/api/orders',{method:'POST',body:JSON.stringify({product_id:id,quantity:Number(q),delivery_address:address})});alert('Pedido #'+d.order_id+' criado. Aguarde a análise do vendedor.');loadOrders();show('orders')}catch(e){alert('Não foi possível criar a compra: '+e.message+'\nSe o problema continuar, atualize a página e tente novamente.')} }
 async function loadOrders(){try{const rows=await api('/api/orders');$('ordersList').innerHTML=rows.length?rows.map(o=>`<article class="card"><div class="row between"><h3>#${o.id} · ${esc(o.product_name)}</h3><span class="tag">${esc(o.status)}</span></div><div class="muted">${esc(o.quantity)} · ${Number(o.total_kz).toLocaleString('pt-AO')} Kz · entrega: ${esc(o.delivery_address)}</div><div class="muted">Transporte: ${esc(o.transport_mode)} · pagamento: ${esc(o.payment_status)}</div><div class="row" style="margin-top:10px">${S.role==='seller'&&o.status==='PENDING_SELLER'?`<button class="btn" onclick="review(${o.id},true)">Aceitar</button><button class="btn danger" onclick="review(${o.id},false)">Rejeitar</button>`:''}${((S.role==='transporter'||S.role==='private_transporter'||S.role==='transport_company')||S.role==='private_transporter'||S.role==='transport_company')&&o.delivery_current_status==='REQUESTED'?`<button class="btn" onclick="deliveryDecision(${o.delivery_id},true)">Aceitar transporte</button><button class="btn danger" onclick="deliveryDecision(${o.delivery_id},false)">Rejeitar</button>`:''}${(o.status==='SELLER_ACCEPTED'&&(S.role==='buyer'||S.role==='seller'))?`<button class="btn secondary" onclick="chooseTransport(${o.id})">Entrega</button>`:''}<button class="btn secondary" onclick="orderDetail(${o.id})">Detalhes</button></div></article>`).join(''):'<div class="notice">Ainda não há pedidos.</div>'}catch(e){$('ordersList').innerHTML='<div class="notice error">'+esc(e.message)+'</div>'}}
@@ -198,7 +172,7 @@ function roleLabel(r) {
     seller: 'Produtor / Vendedor',
     private_transporter: 'Transportador Particular',
     transport_company: 'Empresa Transportadora',
-    admin: 'Administrador' 
+    admin: 'Administrador'
   };
   return map[r] || r || '';
 }
@@ -213,7 +187,7 @@ async function loadProfile() {
       <p>${esc(u.province || '')} · ${esc(u.address || '')}</p>
     </div>`;
     if (S.role === 'seller' && typeof sellerPanel === 'function'){ sellerPanel();}
-    if (S.role === 'admin' && typeof adminPanel === 'functio'){ adminPanel();}
+    if (S.role === 'admin' && typeof adminPanel === 'function'){ adminPanel();}
   } catch (e) {
     $('profileBox').innerHTML = '<div class="notice error">' + esc(e.message) + '</div>';
   }
@@ -277,7 +251,7 @@ box.innerHTML=` <div class="card"><h3>${esc(title)}</h3>${rows.slice(0,50).map(r
 async function releaseOrder(){try{const id=$('releaseId').value;const d=await api(`/api/admin/orders/${id}/release`,{method:'POST'});alert('Liquidação registada: '+JSON.stringify(d));adminPanel()}catch(e){alert(e.message)}}
 async function aiInsights(){try{const o=await api('/api/orders');const p=await api('/api/products');openModal();$('modalTitle').textContent='EPYALINK Insights';$('modalBody').innerHTML=`<div class="card"><b>Produtos no mercado:</b> ${p.length}</div><div class="card"><b>Pedidos visíveis:</b> ${o.length}</div><p class="muted">Insights nesta versão são regras internas do EPYALINK. Uma futura integração LLM pode ampliar recomendações e análise comercial.</p>`}catch(e){alert(e.message)}}
 function openModal(){$('modal').classList.add('open')}function closeModal(){$('modal').classList.remove('open')}
-renderCaptchas();
+renderCaptchas(['loginTurnstile']);
 if('serviceWorker' in navigator)navigator.serviceWorker.register('/sw.js?v=16.2.2').catch(()=>{});
 if(S.token)start();
 // EPYALINK v16.1 UI: institutional content, settings, reports, audit and media.
@@ -339,10 +313,12 @@ async function settingsPanel() {
     } catch (e) {
       html += `<div class="card"><p class="notice error">${esc(e.message)}</p></div>`;
     }
+  }
 
-  // 3. Remoção do '#' para ser compatível com a função $(id)
-  if ($('modalBody')) {$('modalBody').innerHTML = html + `<button class="btn full" style="margin-top:12px;" onclick="closeModal()">Fechar</button>`;
-  openModal('#modal');  
+  if ($('modalBody')) {
+    $('modalBody').innerHTML = html + `<button class="btn full" style="margin-top:12px;" onclick="closeModal()">Fechar</button>`;
+    openModal();
+  }
 }
   
 function downloadReport(){const blob=new Blob([JSON.stringify(window._agroReport||{},null,2)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='agrolink-relatorio.json';a.click();URL.revokeObjectURL(a.href)}
@@ -368,7 +344,7 @@ adminPanel=async function(){$('adminPanel').classList.remove('hidden');try{const
     .rating{letter-spacing:1px;color:#c9752f;font-weight:800}.verified{color:var(--g);font-weight:800}
     .compact-modal .sheet{height:50vh;max-height:50vh;border-radius:20px;align-self:center}
     .compact-modal{align-items:center}
-    .dot-menu{position:fixed;right:10px;top:58px;width:min(330px,calc(100vw - 20px));background:#fff;border:1px solid var(--line);border-radius:16px;box-shadow:0 12px 30px #19301825;z-index:80;padding:8px;display:none}
+    .header-menu-row{display:flex;justify-content:flex-end;align-items:center;padding-top:6px}.scope-dots{min-width:46px;min-height:42px;padding:6px 12px;font-size:22px;line-height:1}.captcha-box{margin:10px 0 12px;padding:10px 8px;border:1px solid var(--line);border-radius:12px;background:#f7faf5}.captcha-label{font-size:11px;color:var(--muted);font-weight:700;text-align:center;margin-bottom:6px}.cf-turnstile{display:flex;justify-content:center;min-height:65px}.dot-menu{position:fixed;right:10px;top:112px;width:min(330px,calc(100vw - 20px));background:#fff;border:1px solid var(--line);border-radius:16px;box-shadow:0 12px 30px #19301825;z-index:80;padding:8px;display:none}
     .dot-menu.open{display:block!important}.dot-menu button{width:100%;text-align:left;border:0;background:white;padding:11px;border-radius:10px;font:inherit}.dot-menu button:hover{background:#edf4e9}
   `;document.head.appendChild(style);
   })();
@@ -417,7 +393,7 @@ adminPanel=async function(){$('adminPanel').classList.remove('hidden');try{const
   window.start=function(){
     $('auth').classList.add('hidden');$('top').classList.remove('hidden');$('main').classList.remove('hidden');$('nav').classList.remove('hidden');
     // Rebuild only the header contents; keep the header itself stable and always clickable.
-    $('top').innerHTML='<div class="brand"><img src="/LogoEpyalink.png"><div class="brand-copy"><b>EPYALINK</b><small>Do campo ao mercado, conectado.</small></div><button id="scopeDots" class="btn secondary scope-dots" type="button" aria-label="Mais opções" title="Menu">☰</button></div>';
+    $('top').innerHTML='<div class="brand"><img src="/LogoEpyalink.png"><div class="brand-copy"><b>EPYALINK</b><small>Do campo ao mercado, conectado.</small></div></div><div class="header-menu-row"><button id="scopeDots" class="btn secondary scope-dots" type="button" aria-label="Mais opções" title="Menu">☰</button></div>';
     const dots=$('scopeDots');
     dots.onclick=(ev)=>{ev.preventDefault();ev.stopPropagation();scopeInstitutional();};
     buildScopeMenu();
@@ -552,7 +528,6 @@ adminPanel=async function(){$('adminPanel').classList.remove('hidden');try{const
   const X={
     'Entrar':'Se connecter','Criar conta':'Créer un compte','Esqueci a palavra-passe':'Mot de passe oublié','Ainda não tem conta ?':'Pas encore de compte ?','Ainda não tem conta?':'Pas encore de compte ?','Já tem conta?':'Vous avez déjà un compte ?','Telefone':'Téléphone','Palavra-passe':'Mot de passe','Palavra-passe (mín. 8)':'Mot de passe (min. 8)','Nome completo':'Nom complet','Perfil':'Type de compte','Província':'Province','Endereço':'Adresse','Fotografia de perfil':'Photo de profil','Nova fotografia':'Nouvelle photo','Guardar perfil':'Enregistrer le profil','Mercado':'Marché','Mercado agrícola':'Marché agricole','Encontre produtos de produtores em Angola.':'Trouvez des produits de producteurs en Angola.','Pesquisar':'Rechercher','Pesquisar produto, produtor ou local':'Rechercher un produit, un producteur ou un lieu','Aplicar filtros':'Appliquer les filtres','Preço mínimo':'Prix minimum','Preço máximo':'Prix maximum','Pedidos':'Commandes','Novo pedido':'Nouvelle commande','ID do pedido':'ID de commande','Detalhes':'Détails','Aceitar pedido':'Accepter la commande','Rejeitar':'Rejeter','Aceitar':'Accepter','Solicitar':'Demander','Pagar':'Payer','Confirmar entrega':'Confirmer la livraison','Pedidos por estado':'Commandes par statut','Total de pedidos':'Total des commandes','Pedidos entregues':'Commandes livrées','Transporte':'Transport','Transportadores':'Transporteurs','Transportador independente':'Transporteur indépendant','Empresa Transportadora':'Entreprise de transport','Transportador Particular / Independente':'Transporteur indépendant','Transportador EPYALINK':'Transporteur EPYALINK','Transportes concluídos':'Transports terminés','Transportes activos':'Transports actifs','Veículo':'Véhicule','Veículos':'Véhicules','Meus veículos':'Mes véhicules','Adicionar veículo':'Ajouter un véhicule','Registar veículo':'Enregistrer un véhicule','Motorista':'Chauffeur','Matrícula':'Immatriculation','Capacidade kg':'Capacité kg','Veículos disponíveis e entregas.':'Véhicules disponibles et livraisons.','Não há veículos livres neste momento.':'Aucun véhicule libre pour le moment.','Nenhum veículo.':'Aucun véhicule.','Aceitar transporte':'Accepter le transport','Transporte aceite.':'Transport accepté.','Transporte rejeitado.':'Transport rejeté.','Calcular cotação':'Calculer le devis','Cotação EPYALINK':'Devis EPYALINK','Calcular custo por distância':'Calculer le coût par distance','A cotação considera rota, quantidade/carga e capacidade do veículo.':'Le devis tient compte de l’itinéraire, de la quantité/charge et de la capacité du véhicule.','Retirada pelo comprador':'Retrait par l’acheteur','Vou buscar · 0 Kz':'Je récupère · 0 Kz','Entrega pelo vendedor':'Livraison par le vendeur','O vendedor entrega · preço definido pelo vendedor':'Le vendeur livre · prix fixé par le vendeur','Quero um transportador EPYALINK':'Je veux un transporteur EPYALINK','Preço de entrega definido pelo vendedor (Kz):':'Prix de livraison fixé par le vendeur (Kz) :','Preço de entrega registado conforme definido pelo vendedor. O EPYALINK não calculou nem impôs esse valor.':'Prix de livraison enregistré selon le vendeur. EPYALINK n’a pas calculé ni imposé ce montant.','A escolha acontece depois da aceitação do vendedor.':'Le choix intervient après l’acceptation du vendeur.','Modalidade definida. Para entrega paga, confirme a distância/custo antes do pagamento.':'Mode défini. Pour une livraison payante, confirmez la distance/le coût avant le paiement.','Entrega confirmada.':'Livraison confirmée.','Código de entrega de 6 dígitos':'Code de livraison à 6 chiffres','Chat':'Chat','Abrir chat':'Ouvrir le chat','Abrir conversa':'Ouvrir la conversation','Chat do pedido':'Chat de la commande','Conversar com o produtor':'Discuter avec le producteur','Sem mensagens.':'Aucun message.','Fotografia no chat (opcional)':'Photo dans le chat (facultatif)','Produto':'Produit','Produtos':'Produits','Produtos no mercado:':'Produits sur le marché :','Produtos ativos':'Produits actifs','Produtos mais vendidos':'Produits les plus vendus','Publicar produto':'Publier un produit','Publicar':'Publier','Produto publicado.':'Produit publié.','Categoria':'Catégorie','Sem categoria':'Sans catégorie','Nome':'Nom','Quantidade':'Quantité','Quantidade disponível':'Quantité disponible','Quantidade desejada:':'Quantité souhaitée :','Unidade':'Unité','Descrição':'Description','Preço Kz':'Prix Kz','Origem / fazenda':'Origine / ferme','Origem/recolha (opcional):':'Origine/retrait (facultatif) :','Fotografia do produto':'Photo du produit','Máximo 5 MB.':'Maximum 5 Mo.','Disponível:':'Disponible :','Sem produtos ativos.':'Aucun produit actif.','Nenhum produto encontrado.':'Aucun produit trouvé.','Perfil do produtor':'Profil du producteur','Ver produtor':'Voir le producteur','Produtor':'Producteur','Produtor agrícola':'Producteur agricole','Produtor / Vendedor':'Producteur / Vendeur','Fazenda:':'Ferme :','Empresa:':'Entreprise :','Empresa / Fazenda':'Entreprise / Ferme','Nome da fazenda (se aplicável)':'Nom de la ferme (si applicable)','Nome da empresa transportadora':'Nom de l’entreprise de transport','A fotografia identifica a conta e será usada no perfil e no chat.':'La photo identifie le compte et sera utilisée dans le profil et le chat.','Minha conta':'Mon compte','As informações institucionais ficam no menu ☰. “Sair” encerra a sessão.':'Les informations institutionnelles se trouvent dans le menu ☰. « Se déconnecter » ferme la session.','Resumo':'Résumé','A carregar resumo...':'Chargement du résumé...','Favoritos':'Favoris','Ainda não tem favoritos.':'Aucun favori pour le moment.','Disputas':'Litiges','Abrir disputa':'Ouvrir un litige','Enviar disputa':'Envoyer le litige','Disputa aberta.':'Litige ouvert.','Sem disputas.':'Aucun litige.','Motivo':'Motif','Notificações':'Notifications','Sem notificações.':'Aucune notification.','Marcar como lida':'Marquer comme lue','Pagamentos':'Paiements','Liquidação':'Règlement','Liquidações':'Règlements','Pagamentos pendentes (Kz)':'Paiements en attente (Kz)','Liquidações pendentes (Kz)':'Règlements en attente (Kz)','Comissões':'Commissions','Configurações':'Paramètres','Abrir configurações':'Ouvrir les paramètres','Configuração guardada.':'Paramètres enregistrés.','Relatórios':'Rapports','Exportar relatório':'Exporter le rapport','Auditoria':'Audit','Filtrar auditoria':'Filtrer l’audit','Utilizadores':'Utilisateurs','Produtores':'Producteurs','Administração':'Administration','Sair':'Se déconnecter','Voltar':'Retour','Fechar':'Fermer','Guardar':'Enregistrer','Atualizar':'Actualiser','Continuar':'Continuer','Enviar':'Envoyer','Recuperar palavra-passe':'Récupérer le mot de passe','Informe o telefone da conta.':'Saisissez le téléphone du compte.','Enviar código':'Envoyer le code','Código recebido':'Code reçu','Informe os 6 dígitos.':'Saisissez les 6 chiffres.','Nova palavra-passe':'Nouveau mot de passe','Alterar palavra-passe':'Modifier le mot de passe','Mostrar palavra-passe':'Afficher le mot de passe','Código de demonstração:':'Code de démonstration :','Conta criada. Entre para abrir o seu perfil.':'Compte créé. Connectez-vous pour ouvrir votre profil.','Conta criada com sucesso. Agora entre com a sua palavra-passe.':'Compte créé avec succès. Connectez-vous avec votre mot de passe.','A imagem deve ter no máximo 5 MB.':'L’image ne doit pas dépasser 5 Mo.','Informe um valor válido em Kz.':'Saisissez un montant valide en Kz.','Como será a entrega?':'Comment se fera la livraison ?','Cotação:':'Devis :','Estado:':'Statut :','Aguardando transportador':'En attente du transporteur','Não necessário':'Non requis','Pendente':'En attente','Aceite':'Accepté','Rejeitado':'Rejeté','Concluído':'Terminé','Cancelado':'Annulé','Em transporte':'En transport','Entregue':'Livré','Solicitado':'Demandé','Pago':'Payé','Não iniciado':'Non commencé','Pedido aceite':'Commande acceptée','Pedido rejeitado':'Commande rejetée','Pedido #':'Commande n°','Total:':'Total :','Sem dados.':'Aucune donnée.','Ainda sem dados de vendas concluídas.':'Pas encore de données de ventes terminées.','Stock baixo':'Stock faible','Regiões compradoras':'Régions acheteuses','Vendas deste mês':'Ventes du mois','Quem somos':'À propos de nous','Nossa missão':'Notre mission','Nossa visão':'Notre vision','Nossa visão futurista':'Notre vision future','Como funciona':'Comment ça marche','Sobre o EPYALINK':'À propos d’EPYALINK','Termos e condições':'Conditions générales','Política de privacidade':'Politique de confidentialité','Ajuda e suporte':'Aide et assistance','Contactos':'Contacts','Informações e suporte':'Informations et assistance','Informação EPYALINK.':'Informations EPYALINK.','Do campo ao mercado, conectado.':'Du champ au marché, connecté.','A EPYALINK é uma plataforma digital para aproximar produtores, compradores e operadores de transporte agrícola em Angola.':'EPYALINK est une plateforme numérique qui rapproche les producteurs, acheteurs et opérateurs de transport agricole en Angola.','Construir uma plataforma agrícola digital de referência em Angola, conectando produção, comércio, transporte e informação.':'Construire une plateforme agricole numérique de référence en Angola, reliant production, commerce, transport et information.','Facilitar o acesso ao mercado, melhorar a ligação entre produção e consumo e organizar a logística agrícola de forma digital.':'Faciliter l’accès au marché, améliorer le lien entre production et consommation et organiser la logistique agricole numériquement.','O EPYALINK conecta produtores, consumidores e transportadores, com ferramentas de mercado, pedidos, logística, comunicação e gestão.':'EPYALINK relie producteurs, consommateurs et transporteurs avec des outils de marché, commandes, logistique, communication et gestion.'}
   P.fr=X;
-  const S={};
   const es={
     'Entrar':'Iniciar sesión','Criar conta':'Crear cuenta','Esqueci a palavra-passe':'Olvidé mi contraseña','Ainda não tem conta?':'¿Aún no tienes cuenta?','Já tem conta?':'¿Ya tienes una cuenta?','Telefone':'Teléfono','Palavra-passe':'Contraseña','Palavra-passe (mín. 8)':'Contraseña (mín. 8)','Nome completo':'Nombre completo','Perfil':'Tipo de cuenta','Província':'Provincia','Endereço':'Dirección','Fotografia de perfil':'Foto de perfil','Nova fotografia':'Nueva foto','Guardar perfil':'Guardar perfil','Mercado':'Mercado','Mercado agrícola':'Mercado agrícola','Encontre produtos de produtores em Angola.':'Encuentra productos de productores en Angola.','Pesquisar':'Buscar','Pesquisar produto, produtor ou local':'Buscar producto, productor o ubicación','Aplicar filtros':'Aplicar filtros','Preço mínimo':'Precio mínimo','Preço máximo':'Precio máximo','Pedidos':'Pedidos','Novo pedido':'Nuevo pedido','ID do pedido':'ID del pedido','Detalhes':'Detalles','Aceitar pedido':'Aceptar pedido','Rejeitar':'Rechazar','Aceitar':'Aceptar','Solicitar':'Solicitar','Pagar':'Pagar','Confirmar entrega':'Confirmar entrega','Pedidos por estado':'Pedidos por estado','Total de pedidos':'Total de pedidos','Pedidos entregues':'Pedidos entregados','Transporte':'Transporte','Transportadores':'Transportistas','Transportador independente':'Transportista independiente','Empresa Transportadora':'Empresa de transporte','Transportador Particular / Independente':'Transportista independiente','Transportador EPYALINK':'Transportista EPYALINK','Transportes concluídos':'Transportes completados','Transportes activos':'Transportes activos','Veículo':'Vehículo','Veículos':'Vehículos','Meus veículos':'Mis vehículos','Adicionar veículo':'Añadir vehículo','Registar veículo':'Registrar vehículo','Motorista':'Conductor','Matrícula':'Matrícula','Capacidade kg':'Capacidad kg','Veículos disponíveis e entregas.':'Vehículos disponibles y entregas.','Não há veículos livres neste momento.':'No hay vehículos libres en este momento.','Nenhum veículo.':'Ningún vehículo.','Aceitar transporte':'Aceptar transporte','Transporte aceite.':'Transporte aceptado.','Transporte rejeitado.':'Transporte rechazado.','Calcular cotação':'Calcular cotización','Cotação EPYALINK':'Cotización EPYALINK','Calcular custo por distância':'Calcular coste por distancia','A cotação considera rota, quantidade/carga e capacidade do veículo.':'La cotización considera ruta, cantidad/carga y capacidad del vehículo.','Retirada pelo comprador':'Recogida por el comprador','Vou buscar · 0 Kz':'Voy a recoger · 0 Kz','Entrega pelo vendedor':'Entrega del vendedor','O vendedor entrega · preço definido pelo vendedor':'El vendedor entrega · precio definido por el vendedor','Quero um transportador EPYALINK':'Quiero un transportista EPYALINK','Preço de entrega definido pelo vendedor (Kz):':'Precio de entrega definido por el vendedor (Kz):','Preço de entrega registado conforme definido pelo vendedor. O EPYALINK não calculou nem impôs esse valor.':'Precio de entrega registrado según lo definido por el vendedor. EPYALINK no calculó ni impuso ese importe.','A escolha acontece depois da aceitação do vendedor.':'La elección se realiza después de la aceptación del vendedor.','Modalidade definida. Para entrega paga, confirme a distância/custo antes do pagamento.':'Modalidad definida. Para entrega de pago, confirme la distancia/coste antes del pago.','Entrega confirmada.':'Entrega confirmada.','Código de entrega de 6 dígitos':'Código de entrega de 6 dígitos','Chat':'Chat','Abrir chat':'Abrir chat','Abrir conversa':'Abrir conversación','Chat do pedido':'Chat del pedido','Conversar com o produtor':'Conversar con el productor','Sem mensagens.':'Sin mensajes.','Fotografia no chat (opcional)':'Foto en el chat (opcional)','Produto':'Producto','Produtos':'Productos','Produtos no mercado:':'Productos en el mercado:','Produtos ativos':'Productos activos','Produtos mais vendidos':'Productos más vendidos','Publicar produto':'Publicar producto','Publicar':'Publicar','Produto publicado.':'Producto publicado.','Categoria':'Categoría','Sem categoria':'Sin categoría','Nome':'Nombre','Quantidade':'Cantidad','Quantidade disponível':'Cantidad disponible','Quantidade desejada:':'Cantidad deseada:','Unidade':'Unidad','Descrição':'Descripción','Preço Kz':'Precio Kz','Origem / fazenda':'Origen / granja','Origem/recolha (opcional):':'Origen/recogida (opcional):','Fotografia do produto':'Foto del producto','Máximo 5 MB.':'Máximo 5 MB.','Disponível:':'Disponible:','Sem produtos ativos.':'Sin productos activos.','Nenhum produto encontrado.':'No se encontraron productos.','Perfil do produtor':'Perfil del productor','Ver produtor':'Ver productor','Produtor':'Productor','Produtor agrícola':'Productor agrícola','Produtor / Vendedor':'Productor / Vendedor','Fazenda:':'Granja:','Empresa:':'Empresa:','Empresa / Fazenda':'Empresa / Granja','Nome da fazenda (se aplicável)':'Nombre de la granja (si corresponde)','Nome da empresa transportadora':'Nombre de la empresa de transporte','A fotografia identifica a conta e será usada no perfil e no chat.':'La foto identifica la cuenta y se utilizará en el perfil y en el chat.','Minha conta':'Mi cuenta','As informações institucionais ficam no menu ☰. “Sair” encerra a sessão.':'La información institucional está en el menú ☰. «Cerrar sesión» termina la sesión.','Resumo':'Resumen','A carregar resumo...':'Cargando resumen...','Favoritos':'Favoritos','Ainda não tem favoritos.':'Aún no tienes favoritos.','Disputas':'Disputas','Abrir disputa':'Abrir disputa','Enviar disputa':'Enviar disputa','Disputa aberta.':'Disputa abierta.','Sem disputas.':'Sin disputas.','Motivo':'Motivo','Notificações':'Notificaciones','Sem notificações.':'Sin notificaciones.','Marcar como lida':'Marcar como leída','Pagamentos':'Pagos','Liquidação':'Liquidación','Liquidações':'Liquidaciones','Pagamentos pendentes (Kz)':'Pagos pendientes (Kz)','Liquidações pendentes (Kz)':'Liquidaciones pendientes (Kz)','Comissões':'Comisiones','Configurações':'Configuración','Abrir configurações':'Abrir configuración','Configuração guardada.':'Configuración guardada.','Relatórios':'Informes','Exportar relatório':'Exportar informe','Auditoria':'Auditoría','Filtrar auditoria':'Filtrar auditoría','Utilizadores':'Usuarios','Produtores':'Productores','Administração':'Administración','Sair':'Cerrar sesión','Voltar':'Volver','Fechar':'Cerrar','Guardar':'Guardar','Atualizar':'Actualizar','Continuar':'Continuar','Enviar':'Enviar','Recuperar palavra-passe':'Recuperar contraseña','Informe o telefone da conta.':'Introduce el teléfono de la cuenta.','Enviar código':'Enviar código','Código recebido':'Código recibido','Informe os 6 dígitos.':'Introduce los 6 dígitos.','Nova palavra-passe':'Nueva contraseña','Alterar palavra-passe':'Cambiar contraseña','Mostrar palavra-passe':'Mostrar contraseña','Código de demonstração:':'Código de demostración:','Conta criada. Entre para abrir o seu perfil.':'Cuenta creada. Inicia sesión para abrir tu perfil.','Conta criada com sucesso. Agora entre com a sua palavra-passe.':'Cuenta creada correctamente. Ahora inicia sesión con tu contraseña.','A imagem deve ter no máximo 5 MB.':'La imagen no puede superar 5 MB.','Informe um valor válido em Kz.':'Introduce un importe válido en Kz.','Como será a entrega?':'¿Cómo será la entrega?','Cotação:':'Cotización:','Estado:':'Estado:','Aguardando transportador':'Esperando transportista','Não necessário':'No necesario','Pendente':'Pendiente','Aceite':'Aceptado','Rejeitado':'Rechazado','Concluído':'Completado','Cancelado':'Cancelado','Em transporte':'En transporte','Entregue':'Entregado','Solicitado':'Solicitado','Pago':'Pagado','Não iniciado':'No iniciado','Pedido aceite':'Pedido aceptado','Pedido rejeitado':'Pedido rechazado','Pedido #':'Pedido n.º','Total:':'Total:','Sem dados.':'Sin datos.','Ainda sem dados de vendas concluídas.':'Aún no hay datos de ventas completadas.','Stock baixo':'Stock bajo','Regiões compradoras':'Regiones compradoras','Vendas deste mês':'Ventas de este mes','Quem somos':'Quiénes somos','Nossa missão':'Nuestra misión','Nossa visão':'Nuestra visión','Nossa visão futurista':'Nuestra visión futura','Como funciona':'Cómo funciona','Sobre o EPYALINK':'Sobre EPYALINK','Termos e condições':'Términos y condiciones','Política de privacidade':'Política de privacidad','Ajuda e suporte':'Ayuda y soporte','Contactos':'Contactos','Informações e suporte':'Información y soporte','Informação EPYALINK.':'Información de EPYALINK.','Do campo ao mercado, conectado.':'Del campo al mercado, conectado.','A EPYALINK é uma plataforma digital para aproximar produtores, compradores e operadores de transporte agrícola em Angola.':'EPYALINK es una plataforma digital que conecta productores, compradores y operadores de transporte agrícola en Angola.','Construir uma plataforma agrícola digital de referência em Angola, conectando produção, comércio, transporte e informação.':'Construir una plataforma agrícola digital de referencia en Angola, conectando producción, comercio, transporte e información.','Facilitar o acesso ao mercado, melhorar a ligação entre produção e consumo e organizar a logística agrícola de forma digital.':'Facilitar el acceso al mercado, mejorar el vínculo entre producción y consumo y organizar la logística agrícola de forma digital.','O EPYALINK conecta produtores, consumidores e transportadores, com ferramentas de mercado, pedidos, logística, comunicação e gestão.':'EPYALINK conecta productores, consumidores y transportistas con herramientas de mercado, pedidos, logística, comunicación y gestión.'}
   P.es=es;
@@ -723,7 +698,6 @@ setTimeout(() => {
     renderAll();
   }
 }, 50);
-  }}
 </script>
 </body>
 </html>
