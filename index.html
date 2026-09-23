@@ -114,7 +114,7 @@ async function renderCaptchas() {
       return;
     }
 
-    onst render = () => {
+    const render = () => {
   const el = document.getElementById('loginTurnstile') || $('#loginTurnstile')[0];
   if (window.turnstile && el) {
     if (el.getAttribute('data-turnstile-widget-id')) {
