@@ -109,7 +109,7 @@ async function renderCaptchas() {
       if (window.turnstile && container) {
         // Limpa o contêiner antes de renderizar para evitar duplicações
         container.innerHTML = ''; 
-        turnstile.render('#loginTurnstile', { sitekey: siteKey });
+        turnstile.render(container, { sitekey: siteKey });
       }
     };
 
