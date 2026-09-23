@@ -308,9 +308,33 @@ async function settingsPanel() {
   // 3. Remoção do '#' para ser compatível com a função $(id)
   if ($('modalBody')) {$('modalBody').innerHTML = html + `<button class="btn full" style="margin-top:12px;" onclick="closeModal()">Fechar</button>`;
   }
-  
-  openModal();
+  openModal('#modal');
+  } catch (err) {
+    console.error(err);
+  }
 }
+
+// Evento para fechar os menus de idioma ao clicar fora
+document.addEventListener('click', e => {
+  if (!e.target.closest('.lang-picker') && !e.target.closest('.app-lang')) {
+    document.querySelectorAll('.lang-panel').forEach(x => x.classList.remove('open'));
+  }
+});
+
+// Executa a inicialização após o carregamento da página
+setTimeout(() => {
+  if (typeof renderAll === 'function') {
+    renderAll();
+  }
+}, 50);
+</script>
+</body>
+</html>
+ 
+}
+
+
+  
 function downloadReport(){const blob=new Blob([JSON.stringify(window._agroReport||{},null,2)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='agrolink-relatorio.json';a.click();URL.revokeObjectURL(a.href)}
 async function saveSetting(k){try{const v=$('set_'+k).value;await api('/api/admin/settings/'+encodeURIComponent(k),{method:'PUT',body:JSON.stringify({value:v})});alert('Configuração guardada.')}catch(e){alert(e.message)}}
 async function adminAudit(action='',entity=''){try{const d=await api('/api/admin/audit?limit=200&action='+encodeURIComponent(action)+'&entity_type='+encodeURIComponent(entity));$('adminListBox').innerHTML=`<div class="card"><h3>Auditoria</h3><div class="grid"><div class="field"><label>Ação</label><input id="auditAction" value="${esc(action)}" placeholder="Ex.: LOGIN"></div><div class="field"><label>Módulo</label><input id="auditEntity" value="${esc(entity)}" placeholder="Ex.: orders"></div></div><button class="btn full" onclick="adminAudit(document.getElementById('auditAction').value,document.getElementById('auditEntity').value)">Filtrar auditoria</button><p class="muted">Total: ${d.total}</p>${d.items.map(r=>`<div style="border-top:1px solid var(--line);padding:9px 0"><b>${esc(r.action)}</b> · ${esc(r.entity_type||'')} #${esc(r.entity_id||'')}<br><span class="muted">${esc(r.created_at)} · ${esc(r.actor_name||'Sistema')} · ${esc(r.actor_phone||'')}</span><pre style="white-space:pre-wrap;font-size:11px">${esc(r.metadata||'{}')}</pre></div>`).join('')}</div>`}catch(e){alert(e.message)}}
