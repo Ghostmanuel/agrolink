@@ -96,14 +96,17 @@ async function renderCaptchas() {
   try {
     const response = await fetch('/api/public-config');
     if (!response.ok) return;
-    
+
     const cfg = await response.json();
-    const siteKey = typeof cfg.turnstile === 'string' 
-      ? cfg.turnstile 
-      : (cfg.turnstile?.sitekey || cfg.sitekey ||'');
+    
+    // 1. EXTRAI A SITEKEY PRIMEIRO
+    const sitekey = typeof cfg.turnstile === 'string'
+      ? cfg.turnstile
+      : (cfg.turnstile?.sitekey || cfg.sitekey || '');
 
     if (!sitekey) return;
 
+    // 2. DEFINE A FUNÇÃO RENDER DEPOIS TER A SITEKEY PRONTA
     const render = () => {
       const el = document.getElementById('loginTurnstile') || $('#loginTurnstile');
       if (window.turnstile && el) {
@@ -112,6 +115,7 @@ async function renderCaptchas() {
       }
     };
 
+    // 3. EXECUTA A RENDERIZAÇÃO
     if (window.turnstile) {
       render();
     } else {
