@@ -1570,8 +1570,8 @@
             if ('serviceWorker'in navigator)
                 navigator.serviceWorker.register('/sw.js?v=16.2.2').catch( () => {}
                 );
-            // Inicialização movida para o fim do script: todas as constantes (P, LANGS, ADMIN_I18N, etc.)
-            // e todas as funções já estão definidas antes de start().
+            if (S.token)
+                window.addEventListener('load', () => start(), { once: true });
             // EPYALINK v16.1 UI: institutional content, settings, reports, audit and media.
             const AL_INFO = {
                 'Quem somos': 'A EPYALINK é uma plataforma digital para aproximar produtores, compradores e operadores de transporte agrícola em Angola.',
@@ -1792,7 +1792,7 @@
                 }
             }
             /* EPYALINK v16.2.1 — stabilization, cache, consistent header and product publishing UX */
-            (function() {
+            ;(function() {
                 const style = document.createElement('style');
                 style.textContent = `
     .scope-avatar{width:46px;height:46px;border-radius:50%;object-fit:cover;background:#edf4e9;border:2px solid #d7e5d2}
@@ -3443,6 +3443,10 @@
                 'O EPYALINK conecta produtores, consumidores e transportadores, com ferramentas de mercado, pedidos, logística, comunicação e gestão.': 'EPYALINK relie producteurs, consommateurs et transporteurs avec des outils de marché, commandes, logistique, communication et gestion.'
             }
             P.fr = X;
+            globalThis.__EPYA_P = P;
+            globalThis.__EPYA_D = D;
+            globalThis.__EPYA_TECH = TECH;
+            globalThis.__EPYA_EXTRA_I18N = EXTRA_I18N;
             const es = {
                 'Entrar': 'Iniciar sesión',
                 'Criar conta': 'Crear cuenta',
@@ -3832,12 +3836,18 @@
             }
             function t(s) {
                 const raw = String(s ?? '');
-                const pack = Object.assign({}, P[lang] || P.pt, EXTRA_I18N?.[lang] || EXTRA_I18N?.pt || {});
-                return pack[raw] || D[lang]?.[raw] || TECH[lang]?.[raw] || D.pt?.[raw] || TECH.pt?.[raw] || raw;
+                const _P = globalThis.__EPYA_P || {};
+                const _D = globalThis.__EPYA_D || {};
+                const _TECH = globalThis.__EPYA_TECH || {};
+                const _EXTRA = globalThis.__EPYA_EXTRA_I18N || {};
+                const pack = Object.assign({}, _P[lang] || _P.pt || {}, _EXTRA[lang] || _EXTRA.pt || {});
+                return pack[raw] || _D[lang]?.[raw] || _TECH[lang]?.[raw] || _D.pt?.[raw] || _TECH.pt?.[raw] || raw;
             }
             function smartTranslate(text) {
                 let out = String(text ?? '');
-                const pack = Object.assign({}, P[lang] || P.pt, EXTRA_I18N[lang] || EXTRA_I18N.pt);
+                const _P = globalThis.__EPYA_P || {};
+                const _EXTRA = globalThis.__EPYA_EXTRA_I18N || {};
+                const pack = Object.assign({}, _P[lang] || _P.pt || {}, _EXTRA[lang] || _EXTRA.pt || {});
                 const keys = Object.keys(pack).filter(k => k && k !== pack[k]).sort( (a, b) => b.length - a.length);
                 for (const k of keys) {
                     const v = pack[k];
@@ -4070,15 +4080,6 @@
                 }
             }
             , 50);
-
-            // Inicialização final — executada somente depois de todo o JavaScript ter sido carregado.
-            window.addEventListener('load', () => {
-                try {
-                    if (S.token) start();
-                } catch (e) {
-                    console.error('EPYALINK: erro na inicialização:', e);
-                }
-            }, { once: true });
         </script>
     </body>
 </html>
