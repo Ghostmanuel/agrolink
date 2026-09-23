@@ -99,14 +99,18 @@ async function renderCaptchas() {
 
     const cfg = await response.json();
     
-    // 1. EXTRAI A SITEKEY PRIMEIRO
-    const sitekey = typeof cfg.turnstile === 'string'
-      ? cfg.turnstile
-      : (cfg.turnstile?.sitekey || cfg.sitekey || '');
+    // Extração ultra-segura da sitekey (força o resultado a ser sempre STRING)
+    let sitekey = cfg.turnstile;
+    if (typeof sitekey === 'object' && sitekey !== null) {
+      sitekey = sitekey.sitekey || sitekey.siteKey || sitekey.key || '';
+    }
+    sitekey = String(sitekey || '').trim();
 
-    if (!sitekey) return;
+    if (!sitekey) {
+      console.warn('Sitekey do Turnstile não encontrada em /api/public-config');
+      return;
+    }
 
-    // 2. DEFINE A FUNÇÃO RENDER DEPOIS TER A SITEKEY PRONTA
     const render = () => {
       const el = document.getElementById('loginTurnstile') || $('#loginTurnstile');
       if (window.turnstile && el) {
@@ -115,7 +119,6 @@ async function renderCaptchas() {
       }
     };
 
-    // 3. EXECUTA A RENDERIZAÇÃO
     if (window.turnstile) {
       render();
     } else {
