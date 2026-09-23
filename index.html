@@ -103,7 +103,7 @@
     }
   });
 
-  const S={token:localStorage.getItem('epyalink_token')
+  const S={token:localStorage.getItem('epyalink_token') || localStorage.getItem('agrolink_token')||''};
   
 const S={token:localStorage.getItem('epyalink_token')||localStorage.getItem('agrolink_token')||'',role:localStorage.getItem('epyalink_role')||localStorage.getItem('agrolink_role')||'',name:localStorage.getItem('epyalink_name')||localStorage.getItem('agrolink_name')||'',cat:null};
 const $=id=>document.getElementById(id); const esc=s=>String(s??'').replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]));
