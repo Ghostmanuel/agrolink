@@ -451,25 +451,24 @@ adminPanel=async function(){$('adminPanel').classList.remove('hidden');try{const
 
   window.aiInsights=async function(){try{const r=await api('/api/market-insights');openModal();$('modalTitle').textContent='EPYALINK Insights';$('modalBody').innerHTML=`<div class="card"><h4>Produtos mais vendidos</h4>${r.top_sold_products.map(x=>`<div class="tag">${esc(x.name)} · ${x.quantity_sold} ${esc(x.unit)}</div>`).join('')||'<span class="muted">Ainda sem dados de vendas concluídas.</span>'}</div><div class="card"><h4>Regiões compradoras</h4>${r.buyer_regions.map(x=>`<div class="tag">${esc(x.province)} · ${x.orders_count} pedidos</div>`).join('')||'<span class="muted">Sem dados.</span>'}</div><div class="card"><h4>Stock baixo</h4>${r.low_stock.map(x=>`<div class="tag">${esc(x.name)} · ${x.quantity} ${esc(x.unit)}</div>`).join('')||'<span class="muted">Sem dados.</span>'}</div><p class="muted">${esc(r.note)}</p>`}catch(e){alert(e.message)}};
 
-})();
-
-
-/* EPYALINK i18n: 3-layer language architecture
-   1) international UI packs; 2) individually selectable Angolan language packs;
-   3) intelligent content translation adapter (provider-configurable, never invents translations).
-*/
 (function(){
-  const LANGS={
-    pt:{label:'Português',flag:'🇦🇴',status:'Interface completa'},
-    en:{label:'English',flag:'🇬🇧',status:'Complete interface pack'},
-    fr:{label:'Français',flag:'🇫🇷',status:'Pack interface'},
-    es:{label:'Español',flag:'🇪🇸',status:'Pack interface'},
-    umb:{label:'Umbundu',flag:'🌍',status:'Disponível para seleção'},
-    kmb:{label:'Kimbundu',flag:'🌍',status:'Preparado para tradução e validação humana'},
-    kik:{label:'Kikongo',flag:'🌍',status:'Preparado para tradução e validação humana'},
-    ckw:{label:'Cokwe',flag:'🌍',status:'Preparado para tradução e validação humana'},
-    kwa:{label:'Kwanyama',flag:'🌍',status:'Preparado para tradução e validação humana'}
+  const LANGS = {
+    pt:  { label: 'Português', flag: '🇦🇴', status: 'Interface completa' },
+    en:  { label: 'English',   flag: '🇬🇧', status: 'Complete interface pack' },
+    fr:  { label: 'Français',  flag: '🇫🇷', status: 'Pack interface' },
+    es:  { label: 'Español',   flag: '🇪🇸', status: 'Pack interface' },
+    umb: { label: 'Umbundu',   flag: '🌍', status: 'Disponível para seleção' },
+    kmb: { label: 'Kimbundu',  flag: '🌍', status: 'Preparado para tradução e validação humana' },
+    kik: { label: 'Kikongo',   flag: '🌍', status: 'Preparado para tradução e validação humana' },
+    ckw: { label: 'Cokwe',     flag: '🌍', status: 'Preparado para tradução e validação humana' },
+    kwa: { label: 'Kwanyama',  flag: '🌍', status: 'Preparado para tradução e validação humana' }
   };
+
+  // Mapeia apenas os nomes dos idiomas para alimentar a window.epyalanguages do settingsPanel
+  window.epyalanguages = Object.fromEntries(
+    Object.entries(LANGS).map(([code, item]) => [code, `${item.flag} ${item.label}`])
+  );
+})();
   const TECH={
     pt:{'buyer':'Comprador','seller':'Vendedor','private_transporter':'Transportador Particular / Independente','transport_company':'Empresa Transportadora','admin':'Administrador','SELLER_ACCEPTED':'Aceite pelo vendedor','SELLER_REJECTED':'Rejeitado pelo vendedor','PENDING':'Pendente','PAID':'Pago','NOT_STARTED':'Não iniciado','DELIVERED':'Entregue','IN_TRANSIT':'Em transporte','REQUESTED':'Solicitado','ACCEPTED':'Aceite','REJECTED':'Rejeitado','COMPLETED':'Concluído','CANCELLED':'Cancelado'},
     en:{'buyer':'Buyer','seller':'Seller','private_transporter':'Independent transporter','transport_company':'Transport company','admin':'Administrator','SELLER_ACCEPTED':'Accepted by seller','SELLER_REJECTED':'Rejected by seller','PENDING':'Pending','PAID':'Paid','NOT_STARTED':'Not started','DELIVERED':'Delivered','IN_TRANSIT':'In transit','REQUESTED':'Requested','ACCEPTED':'Accepted','REJECTED':'Rejected','COMPLETED':'Completed','CANCELLED':'Cancelled'},
