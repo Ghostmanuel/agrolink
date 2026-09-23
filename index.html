@@ -102,25 +102,24 @@ async function renderCaptchas() {
       ? cfg.turnstile 
       : (cfg.turnstile?.sitekey || cfg.sitekey ||'');
 
-    if (!siteKey) return;
+    if (!sitekey) return;
 
-onst render = () => {
-    const el = document.getElementById('loginTurnstile') || $('#loginTurnstile');
-    if (window.turnstile && el) {
-      el.innerHTML = '';
-      window.turnstile.render(el, { sitekey: sitekey });
+    const render = () => {
+      const el = document.getElementById('loginTurnstile') || $('#loginTurnstile');
+      if (window.turnstile && el) {
+        el.innerHTML = '';
+        window.turnstile.render(el, { sitekey: sitekey });
+      }
+    };
+
+    if (window.turnstile) {
+      render();
+    } else {
+      window.onLoadTurnstileCallback = render;
     }
-  };
-
-  // Renderiza diretamente se já carregou ou aguarda o evento
-  if (window.turnstile) {
-    render();
-  } else {
-    window.onLoadTurnstileCallback = render;
+  } catch (e) {
+    console.warn('Erro ao carregar captcha:', e);
   }
-} catch (e) {
-  console.warn('Erro ao carregar captcha:', e);
-}
 
   
 function authMode(m){$('recoveryBox').classList.add('hidden');$('loginForm').classList.toggle('hidden',m!=='login');$('registerForm').classList.toggle('hidden',m!=='register');$('authMsg').innerHTML='';if(m==='register')roleFields()}
