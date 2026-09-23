@@ -4,7 +4,7 @@
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
         <title>EPYALINK — Do campo ao mercado, conectado.</title>
-        <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
+     
         <link rel="manifest" href="/manifest.json">
         <meta name="theme-color" content="#2F6B3A">
         <meta name="apple-mobile-web-app-capable" content="yes">
@@ -681,10 +681,7 @@
                             <input id="loginPassword" type="password" autocomplete="current-password" required>
                             <button type="button" aria-label="Mostrar palavra-passe" onclick="togglePassword('loginPassword',this)">👁</button>
                         </div>
-                        <div class="captcha-box">
-                            <div class="captcha-label">Verificação de segurança</div>
-                            <div id="loginTurnstile" class="cf-turnstile"></div>
-                        </div>
+                       
                         <button class="btn full" type="submit">Entrar</button>
                         <button type="button" class="btn secondary full" style="margin-top:8px" onclick="openRecovery()">Esqueci a palavra-passe</button>
                         <div class="auth-switch">
@@ -924,24 +921,14 @@
                     throw Error(d.detail || d.message || `Erro ${r.status}`);
                 return d
             }
-            const TURNSTILE_WIDGETS = {};
-            let TURNSTILE_SITE_KEY = '';
+           
+function captchaToken(id) {
+    return '';
+}
 
-            function captchaToken(id) {
-                try {
-                    const widget = TURNSTILE_WIDGETS[id];
-                    return window.turnstile && widget !== undefined ? (window.turnstile.getResponse(widget) || '') : '';
-                } catch (e) {
-                    return '';
-                }
-            }
-
-            function resetCaptchas() {
-                try {
-                    Object.values(TURNSTILE_WIDGETS).forEach(widget => {
-                        if (window.turnstile && widget !== undefined) window.turnstile.reset(widget);
-                    });
-                } catch (e) {}
+function resetCaptchas() {
+    // Função vazia caso ainda seja chamada em algum lugar
+}
             }
 
             async function getTurnstileSiteKey() {
@@ -1028,14 +1015,13 @@
             $('loginForm').onsubmit = async e => {
                 e.preventDefault();
                 try {
-                    const d = await api('/api/auth/login', {
-                        method: 'POST',
-                        body: JSON.stringify({
-                            phone: $('loginPhone').value,
-                            password: $('loginPassword').value,
-                            turnstile_token: captchaToken('loginTurnstile')
-                        })
-                    });
+    const d = await api('/api/auth/login', {
+        method: 'POST',
+        body: JSON.stringify({
+            phone: $('loginPhone').value,
+            password: $('loginPassword').value
+        })
+    });
                     S.token = d.access_token;
                     S.role = d.role;
                     S.name = d.full_name;
