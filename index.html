@@ -143,7 +143,7 @@ async function renderCaptchas() {
           console.warn('Erro ao renderizar widget Turnstile:', e);
         }
       }
-    };
+    
   
 function authMode(m){$('recoveryBox').classList.add('hidden');$('loginForm').classList.toggle('hidden',m!=='login');$('registerForm').classList.toggle('hidden',m!=='register');$('authMsg').innerHTML='';if(m==='register')roleFields()}
 function togglePassword(id,btn){const el=$(id);if(!el)return;el.type=el.type==='password'?'text':'password';btn.textContent=el.type==='password'?'👁':'🙈';}
