@@ -907,12 +907,10 @@
                     throw Error(d.detail || d.message || `Erro ${r.status}`);
                 return d
             }
-            const TURNSTILE_WIDGETS = {};
             function captchaToken(id) { return ''; }
             function resetCaptchas() {}
-            async function renderCaptchas(ids=['loginTurnstile']) { return; }
+            async function renderCaptchas(ids=[]) { return; }
             function renderVisibleCaptcha(id) { return; }
-            
 
             function authMode(m) {
                 $('recoveryBox').classList.add('hidden');
@@ -954,7 +952,6 @@
                         body: JSON.stringify({
                             phone: $('loginPhone').value,
                             password: $('loginPassword').value,
-                            turnstile_token: captchaToken('loginTurnstile')
                         })
                     });
                     S.token = d.access_token;
@@ -991,7 +988,6 @@
                         method: 'POST',
                         body: JSON.stringify({
                             phone,
-                            turnstile_token: captchaToken('recoveryTurnstile')
                         })
                     });
                     $('recoveryCodeBox').classList.remove('hidden');
@@ -1020,7 +1016,6 @@
                             phone: $('fpPhone').value,
                             code: $('fpCode').value,
                             new_password: $('fpNew').value,
-                            turnstile_token: captchaToken('resetTurnstile')
                         })
                     });
                     $('authMsg').innerHTML = '<div class="notice ok">' + esc(d.message) + ' Pode entrar com a nova palavra-passe.</div>';
@@ -1857,7 +1852,6 @@
                     profile_photo_filename: photo.filename,
                     profile_photo_content_type: photo.content_type,
                     profile_photo_data_base64: photo.data_base64,
-                    turnstile_token: captchaToken('registerTurnstile')
                 };
                 try {
                     await api('/api/auth/register', {
