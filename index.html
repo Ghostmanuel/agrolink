@@ -4,7 +4,6 @@
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
         <title>EPYALINK — Do campo ao mercado, conectado.</title>
-        <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
         <link rel="manifest" href="/manifest.json">
         <meta name="theme-color" content="#2F6B3A">
         <meta name="apple-mobile-web-app-capable" content="yes">
@@ -681,10 +680,6 @@
                             <input id="loginPassword" type="password" autocomplete="current-password" required>
                             <button type="button" aria-label="Mostrar palavra-passe" onclick="togglePassword('loginPassword',this)">👁</button>
                         </div>
-                        <div class="captcha-box">
-                            <div class="captcha-label">Verificação de segurança</div>
-                            <div id="loginTurnstile" class="cf-turnstile"></div>
-                        </div>
                         <button class="btn full" type="submit">Entrar</button>
                         <button type="button" class="btn secondary full" style="margin-top:8px" onclick="openRecovery()">Esqueci a palavra-passe</button>
                         <div class="auth-switch">
@@ -749,10 +744,6 @@
                             <input id="rPhoto" type="file" accept="image/*">
                             <div class="muted small">A fotografia identifica a conta e será usada no perfil e no chat.</div>
                         </div>
-                        <div class="captcha-box">
-                            <div class="captcha-label">Verificação de segurança</div>
-                            <div id="registerTurnstile" class="cf-turnstile"></div>
-                        </div>
                         <button class="btn full" type="submit">Criar conta</button>
                         <div class="auth-switch">
                             Já tem conta? <button type="button" onclick="authMode('login')">Entrar</button>
@@ -766,10 +757,6 @@
                             <label>Telefone</label>
                             <input id="fpPhone" inputmode="tel" placeholder="900 000 001">
                         </div>
-                        <div class="captcha-box">
-                            <div class="captcha-label">Verificação de segurança</div>
-                            <div id="recoveryTurnstile" class="cf-turnstile"></div>
-                        </div>
                         <button class="btn full" onclick="requestRecovery()">Enviar código</button>
                         <div id="recoveryCodeBox" class="hidden">
                             <div class="field">
@@ -780,10 +767,6 @@
                                 <label>Nova palavra-passe</label>
                                 <input id="fpNew" type="password" minlength="8">
                                 <button type="button" aria-label="Mostrar palavra-passe" onclick="togglePassword('fpNew',this)">👁</button>
-                            </div>
-                            <div class="captcha-box">
-                                <div class="captcha-label">Verificação de segurança</div>
-                                <div id="resetTurnstile" class="cf-turnstile"></div>
                             </div>
                             <button class="btn full" onclick="resetPassword()">Alterar palavra-passe</button>
                         </div>
@@ -925,72 +908,10 @@
                 return d
             }
             const TURNSTILE_WIDGETS = {};
-            function captchaToken(id) {
-                try {
-                    return window.turnstile && TURNSTILE_WIDGETS[id] ? turnstile.getResponse(TURNSTILE_WIDGETS[id]) : ''
-                } catch {
-                    return ''
-                }
-            }
-            function resetCaptchas() {
-                try {
-                    Object.values(TURNSTILE_WIDGETS).forEach(w => window.turnstile && turnstile.reset(w))
-                } catch {}
-            }
-
-            async function renderCaptchas(ids=['loginTurnstile']) {
-                try {
-                    const response = await fetch('/api/public-config');
-                    if (!response.ok)
-                        return;
-                    const cfg = await response.json();
-                    const siteKey = typeof cfg.turnstile === 'string' ? cfg.turnstile : (cfg.turnstile?.sitekey || '');
-                    if (!siteKey)
-                        return;
-                    if (!window.turnstile) {
-                        window.onloadTurnstileCallback = () => renderCaptchas(ids);
-                        return;
-                    }
-                    ids.forEach(id => {
-                        const el = $(id);
-                        if (!el || el.offsetParent === null)
-                            return;
-                        if (TURNSTILE_WIDGETS[id] !== undefined) {
-                            try {
-                                turnstile.reset(TURNSTILE_WIDGETS[id]);
-                                return;
-                            } catch {}
-                        }
-                        el.innerHTML = '';
-                        try {
-                            TURNSTILE_WIDGETS[id] = turnstile.render(el, {
-                                sitekey: siteKey,
-                                callback: () => {}
-                                ,
-                                'expired-callback': () => {}
-                                ,
-                                'error-callback': () => {}
-                            });
-                        } catch (e) {
-                            console.warn('Erro ao renderizar verificação:', e);
-                        }
-                    }
-                    );
-                } catch (e) {
-                    console.warn('Erro ao carregar verificação:', e);
-                }
-            }
-
-            function renderVisibleCaptcha(id) {
-                const el = $(id);
-                if (!el || !window.turnstile)
-                    return;
-                const style = getComputedStyle(el.closest('.captcha-box') || el);
-                if (style.display === 'none')
-                    return;
-                if (TURNSTILE_WIDGETS[id] === undefined) {
-                    renderCaptchas();
-                }
+            function captchaToken(id) { return ''; }
+            function resetCaptchas() {}
+            async function renderCaptchas(ids=['loginTurnstile']) { return; }
+            function renderVisibleCaptcha(id) { return; }
             }
 
             function authMode(m) {
